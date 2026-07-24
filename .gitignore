@@ -1,0 +1,28 @@
+# --- Frontend (React + Vite) ---
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# --- Backend (Laravel) ---
+backend/vendor/
+backend/node_modules/
+backend/.env
+backend/storage/*.key
+backend/storage/logs/*
+backend/storage/framework/cache/*
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*
+
+# --- Logs ---
+*.log
+
+# --- OS / editor ---
+.DS_Store
+.idea/
+.vscode/
+
+# --- Root environment ---
+.env
+!.env.example
