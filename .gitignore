@@ -17,6 +17,7 @@ backend/storage/framework/views/*
 
 # --- Logs ---
 *.log
+cookies.txt
 
 # --- OS / editor ---
 .DS_Store
