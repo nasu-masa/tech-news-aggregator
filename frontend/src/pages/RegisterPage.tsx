@@ -1,5 +1,6 @@
 import { useState, type SyntheticEvent } from "react";
 import { register } from "../lib/auth";
+import LogoutButton from "../components/LogoutButton";
 
 function RegisterPage() {
   const [name, setName] = useState("");
@@ -24,36 +25,39 @@ function RegisterPage() {
     }
   };
   return (
-    <form onSubmit={handleSubmit} noValidate>
-      <input
-        type="text"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder="名前"
-      />
-      <input
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="メールアドレス"
-      />
-      <input
-        type="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        placeholder="パスワード"
-      />
-      <input
-        type="password"
-        value={passwordConfirmation}
-        onChange={(e) => setPasswordConfirmation(e.target.value)}
-        placeholder="確認用パスパード"
-      />
+    <>
+      <form onSubmit={handleSubmit} noValidate>
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="名前"
+        />
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="メールアドレス"
+        />
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="パスワード"
+        />
+        <input
+          type="password"
+          value={passwordConfirmation}
+          onChange={(e) => setPasswordConfirmation(e.target.value)}
+          placeholder="確認用パスワード"
+        />
 
-      <button type="submit">会員登録</button>
+        <button type="submit">会員登録</button>
 
-      {errorMessage && <p>{errorMessage}</p>}
-    </form>
+        {errorMessage && <p>{errorMessage}</p>}
+      </form>
+      <LogoutButton />
+    </>
   );
 }
 export default RegisterPage;
