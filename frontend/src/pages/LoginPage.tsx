@@ -1,51 +1,77 @@
-import { useState, type SyntheticEvent } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { login } from "../lib/auth";
+import { useForm, type SubmitHandler } from "react-hook-form";
+import { loginUser, type LoginInput } from "../lib/auth";
+import setValidationErrors from "../lib/formValidation";
 
 function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: SyntheticEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginInput>();
 
-    if (isSubmitting) return;
-
-    setIsSubmitting(true);
+  const onSubmit: SubmitHandler<LoginInput> = async (data) => {
     setErrorMessage("");
 
     try {
-      await login({
-        email,
-        password,
-      });
+      await loginUser(data);
 
       navigate("/", { replace: true });
-    } catch {
-      setErrorMessage("ログインに失敗しました。");
-    } finally {
-      setIsSubmitting(false);
+    } catch (error) {
+      const handled = setValidationErrors(error, setError, [
+        "email",
+        "password",
+      ]);
+
+      if (!handled) {
+        setErrorMessage("ログインに失敗しました。");
+      }
     }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit(onSubmit)} noValidate>
+      <label htmlFor="email">メールアドレス</label>
       <input
         type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="メールアドレス"
+        id="email"
+        aria-invalid={errors.email ? "true" : "false"}
+        aria-describedby={errors.email ? "email-error" : undefined}
+        {...register("email", {
+          required: "メールアドレスを入力してください",
+          pattern: {
+            value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+            message: "メールアドレス形式で入力してください",
+          },
+        })}
       />
+      {errors.email && (
+        <p id="email-error" role="alert">
+          {errors.email.message}
+        </p>
+      )}
+
+      <label htmlFor="password">パスワード</label>
       <input
         type="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        placeholder="パスワード"
+        id="password"
+        aria-invalid={errors.password ? "true" : "false"}
+        aria-describedby={errors.password ? "password-error" : undefined}
+        {...register("password", {
+          required: "パスワードを入力してください",
+        })}
       />
+      {errors.password && (
+        <p id="password-error" role="alert">
+          {errors.password.message}
+        </p>
+      )}
 
       <button type="submit" disabled={isSubmitting}>
         {isSubmitting ? "ログイン中..." : "ログイン"}

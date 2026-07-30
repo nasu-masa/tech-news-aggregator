@@ -7,7 +7,7 @@ export type RegisterInput = {
   password_confirmation: string;
 };
 
-export const register = async (input: RegisterInput): Promise<void> => {
+export const registerUser = async (input: RegisterInput): Promise<void> => {
   await apiClient.get("/sanctum/csrf-cookie");
   await apiClient.post("/register", input);
 };
@@ -17,7 +17,7 @@ export type LoginInput = {
   password: string;
 };
 
-export const login = async (input: LoginInput): Promise<void> => {
+export const loginUser = async (input: LoginInput): Promise<void> => {
   await apiClient.get("/sanctum/csrf-cookie");
   await apiClient.post("/login", input);
 };
