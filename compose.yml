@@ -27,6 +27,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+      mailhog:
+        condition: service_started
 
   # LaravelへのHTTPリクエストを受けるWebサーバー
   nginx:
@@ -64,6 +66,14 @@ services:
     image: redis:7-alpine
     volumes:
       - redis-data:/data
+
+  # 開発用メールサーバー
+  mailhog:
+    image: mailhog/mailhog
+    platform: linux/amd64
+    ports:
+      - "1025:1025"
+      - "8025:8025"
 
 volumes:
   db-data:

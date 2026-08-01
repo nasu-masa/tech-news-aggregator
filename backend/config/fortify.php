@@ -75,6 +75,13 @@ return [
 
     'home' => '/home',
 
+    'redirects' => [
+        'email-verification' => rtrim(
+            env('FRONTEND_URL', 'http://localhost:5173'),
+            '/'
+        ).'/verify-email',
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Fortify Routes Prefix / Subdomain
