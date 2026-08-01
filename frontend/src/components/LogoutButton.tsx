@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { logout } from "../lib/auth";
 
-function LogoutButton() {
+function LogoutButton({ className }: { className?: string }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const { clearUser } = useAuth();
@@ -24,7 +24,7 @@ function LogoutButton() {
   };
 
   return (
-    <button type="button" onClick={handleLogout} disabled={isSubmitting}>
+    <button type="button" onClick={handleLogout} disabled={isSubmitting} className={className}>
       {isSubmitting ? "ログアウト中..." : "ログアウト"}
     </button>
   );
