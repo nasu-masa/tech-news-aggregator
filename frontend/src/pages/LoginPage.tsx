@@ -3,11 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { loginUser, type LoginInput } from "../lib/auth";
 import setValidationErrors from "../lib/formValidation";
+import { useAuth } from "../hooks/useAuth";
 
 function LoginPage() {
   const [errorMessage, setErrorMessage] = useState("");
 
   const navigate = useNavigate();
+  const { refreshUser } = useAuth();
 
   const {
     register,
@@ -21,8 +23,11 @@ function LoginPage() {
 
     try {
       await loginUser(data);
+      const user = await refreshUser();
 
-      navigate("/", { replace: true });
+      navigate(user?.email_verified_at ? "/" : "/verify-email", {
+        replace: true,
+      });
     } catch (error) {
       const handled = setValidationErrors(error, setError, [
         "email",

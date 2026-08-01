@@ -2,9 +2,14 @@ import { useState } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { registerUser, type RegisterInput } from "../lib/auth";
 import setValidationErrors from "../lib/formValidation";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 
 function RegisterPage() {
   const [errorMessage, setErrorMessage] = useState("");
+
+  const navigate = useNavigate();
+  const { refreshUser } = useAuth();
 
   const {
     register,
@@ -22,6 +27,9 @@ function RegisterPage() {
 
     try {
       await registerUser(data);
+      await refreshUser();
+
+      navigate("/verify-email", { replace: true });
     } catch (error) {
       const handled = setValidationErrors(error, setError, [
         "name",

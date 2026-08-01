@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 import { logout } from "../lib/auth";
 
 function LogoutButton() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+  const { clearUser } = useAuth();
 
   const handleLogout = async () => {
     if (isSubmitting) return;
@@ -13,6 +15,7 @@ function LogoutButton() {
 
     try {
       await logout();
+      clearUser();
 
       navigate("/login", { replace: true });
     } finally {

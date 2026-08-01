@@ -26,6 +26,7 @@ export type User = {
   id: number;
   name: string;
   email: string;
+  email_verified_at: string | null;
 };
 
 export const getCurrentUser = async (): Promise<User> => {
@@ -36,4 +37,8 @@ export const getCurrentUser = async (): Promise<User> => {
 
 export const logout = async (): Promise<void> => {
   await apiClient.post("/logout");
+};
+
+export const resendVerificationEmail = async (): Promise<void> => {
+  await apiClient.post("/email/verification-notification");
 };
