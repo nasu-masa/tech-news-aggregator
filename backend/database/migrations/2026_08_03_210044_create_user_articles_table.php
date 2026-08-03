@@ -11,15 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('user_article_statuses', function (Blueprint $table) {
+        Schema::create('user_articles', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('article_id')->constrained()->cascadeOnDelete();
+            $table->boolean('is_read')->default(false);
             $table->boolean('is_favorite')->default(false);
             $table->boolean('is_read_later')->default(false);
-            $table->boolean('is_read')->default(false);
+            $table->text('memo')->nullable();
+            $table->timestampTz('read_at')->nullable();
             $table->timestamps();
-
             $table->unique(['user_id', 'article_id']);
         });
     }
@@ -29,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('user_article_statuses');
+        Schema::dropIfExists('user_articles');
     }
 };
