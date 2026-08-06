@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use Laminas\Feed\Reader\Reader;
 use DateTimeZone;
+use Laminas\Feed\Reader\Reader;
 
 class FeedParser
 {
@@ -15,11 +15,13 @@ class FeedParser
         foreach ($feed as $entry) {
             $title = trim((string) $entry->getTitle());
             $url = trim((string) $entry->getLink());
+            $scheme = parse_url($url, PHP_URL_SCHEME);
 
             if (
                 $title === ''
                 || filter_var($url, FILTER_VALIDATE_URL) === false
-                || ! in_array(parse_url($url, PHP_URL_SCHEME), ['https'], true)
+                || ! is_string($scheme)
+                || strtolower($scheme) !== 'https'
             ) {
                 continue;
             }
@@ -41,5 +43,4 @@ class FeedParser
 
         return $articles;
     }
-
 }
