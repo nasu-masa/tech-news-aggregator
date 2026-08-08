@@ -32,7 +32,7 @@ class FeedParser
             $articles[] = [
                 'title' => $title,
                 'url' => $url,
-                'description' => $entry->getDescription(),
+                'summary' => $entry->getDescription(),
                 'published_at' => $publishedAt
                     ? $publishedAt
                         ->setTimezone(new DateTimeZone('UTC'))

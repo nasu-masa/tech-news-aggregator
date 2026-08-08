@@ -38,7 +38,7 @@ class FeedParserTest extends TestCase
         );
         $this->assertSame(
             '記事の概要です。',
-            $articles[0]['description']
+            $articles[0]['summary']
         );
         $this->assertSame(
             '2026-08-04 03:00:00',
@@ -80,7 +80,7 @@ class FeedParserTest extends TestCase
 
         $this->assertSame(
             'Atom記事の概要です。',
-            $articles[0]['description']
+            $articles[0]['summary']
         );
 
         $this->assertSame(
@@ -200,7 +200,7 @@ class FeedParserTest extends TestCase
         $articles = (new FeedParser)->parse($xml);
 
         $this->assertCount(1, $articles);
-        $this->assertNull($articles[0]['description']);
+        $this->assertNull($articles[0]['summary']);
     }
 
     public function test_published_atがない記事はnullになる(): void
