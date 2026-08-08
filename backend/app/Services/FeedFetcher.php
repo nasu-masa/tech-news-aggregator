@@ -25,6 +25,7 @@ class FeedFetcher
         }
 
         $xml = Http::timeout(10)
+            ->retry(2, 500)
             ->get($url)
             ->throw()
             ->body();

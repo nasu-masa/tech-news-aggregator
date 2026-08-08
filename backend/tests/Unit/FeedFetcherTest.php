@@ -100,7 +100,11 @@ class FeedFetcherTest extends TestCase
 
         $this->expectException(RequestException::class);
 
-        $fetcher->fetch('https://example.com/feed.xml');
+        try {
+            $fetcher->fetch('https://example.com/feed.xml');
+        } finally {
+            Http::assertSentCount(2);
+        }
     }
 
     public function test_取得した本文が不正_xm_lなら例外が発生する(): void
