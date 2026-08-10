@@ -4,10 +4,11 @@ namespace App\Jobs;
 
 use App\Models\Source;
 use App\Services\FeedImporter;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 
-class ImportFeedJob implements ShouldQueue
+class ImportFeedJob implements ShouldBeUnique, ShouldQueue
 {
     use Queueable;
 
@@ -22,5 +23,10 @@ class ImportFeedJob implements ShouldQueue
     public function handle(FeedImporter $feedImporter): void
     {
         $feedImporter->import($this->source);
+    }
+
+    public function uniqueId(): string
+    {
+        return (string) $this->source->getKey();
     }
 }

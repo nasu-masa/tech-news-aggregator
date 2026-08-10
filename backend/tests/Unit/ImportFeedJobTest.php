@@ -30,4 +30,14 @@ class ImportFeedJobTest extends TestCase
 
         $job->handle($feedImporter);
     }
+
+    public function test_source_idをunique_idとして返す(): void
+    {
+        $source = new Source;
+        $source->id = 123;
+
+        $job = new ImportFeedJob($source);
+
+        $this->assertSame('123', $job->uniqueId());
+    }
 }
