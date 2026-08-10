@@ -24,7 +24,7 @@ return [
         'forgot-password',
         'reset-password',
         'user/*',
-        'two-factor-*',],
+        'two-factor-*', ],
 
     'allowed_methods' => ['*'],
 
