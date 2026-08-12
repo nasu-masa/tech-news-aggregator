@@ -1,19 +1,22 @@
 <?php
 
-namespace Tests\Unit;
+namespace Tests\Feature;
 
 use App\Models\Source;
 use App\Services\ArticleSaver;
 use App\Services\FeedFetcher;
 use App\Services\FeedImporter;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Mockery;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use Mockery\MockInterface;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 
 class FeedImporterTest extends TestCase
 {
     use MockeryPHPUnitIntegration;
+    use RefreshDatabase;
 
     public function test_取得した記事を保存処理へ渡す(): void
     {
@@ -145,5 +148,150 @@ class FeedImporterTest extends TestCase
         $feedImporter = new FeedImporter($feedFetcher, $articleSaver);
 
         $feedImporter->import($source);
+    }
+
+    public function test_同じsourceがロック中なら取り込み処理を実行しない(): void
+    {
+        $source = Source::create([
+            'name' => 'テストフィード',
+            'feed_url' => 'https://example.com/feed.xml',
+            'site_url' => 'https://example.com',
+            'is_active' => true,
+        ]);
+
+        $lock = Cache::lock("feed-import:{$source->id}", 60);
+        $this->assertTrue($lock->get());
+
+        $feedFetcher = Mockery::mock(FeedFetcher::class);
+        $articleSaver = Mockery::mock(ArticleSaver::class);
+
+        try {
+            $feedFetcher
+                ->shouldNotReceive('fetch');
+
+            $articleSaver
+                ->shouldNotReceive('save');
+
+            $feedImporter = new FeedImporter($feedFetcher, $articleSaver);
+
+            $feedImporter->import($source);
+
+        } finally {
+            $lock->release();
+        }
+
+    }
+
+    public function test_別sourceがロック中でも取込処理を実行できる(): void
+    {
+        $lockedSource = Source::create([
+            'name' => 'ロック中フィード',
+            'feed_url' => 'https://example.com/feed.xml',
+            'site_url' => 'https://example.com',
+            'is_active' => true,
+        ]);
+
+        $targetSource = Source::create([
+            'name' => '取得対象フィード',
+            'feed_url' => 'https://example.org/feed.xml',
+            'site_url' => 'https://example.org',
+            'is_active' => true,
+        ]);
+
+        $lock = Cache::lock("feed-import:{$lockedSource->id}", 60);
+        $this->assertTrue($lock->get());
+
+        $feedFetcher = Mockery::mock(FeedFetcher::class);
+        $articleSaver = Mockery::mock(ArticleSaver::class);
+
+        $articles = [];
+
+        try {
+            $feedFetcher
+                ->shouldReceive('fetch')
+                ->once()
+                ->with($targetSource->feed_url)
+                ->andReturn($articles);
+
+            $articleSaver
+                ->shouldReceive('save')
+                ->once()
+                ->with($targetSource, $articles);
+
+            $feedImporter = new FeedImporter($feedFetcher, $articleSaver);
+
+            $feedImporter->import($targetSource);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    public function test_取込完了後にロックが解放される(): void
+    {
+        $source = Source::create([
+            'name' => 'テストフィード',
+            'feed_url' => 'https://example.com/feed.xml',
+            'site_url' => 'https://example.com',
+            'is_active' => true,
+        ]);
+
+        $feedFetcher = Mockery::mock(FeedFetcher::class);
+        $articleSaver = Mockery::mock(ArticleSaver::class);
+
+        $feedFetcher
+            ->shouldReceive('fetch')
+            ->once()
+            ->andReturn([]);
+
+        $articleSaver
+            ->shouldReceive('save')
+            ->once();
+
+        $feedImporter = new FeedImporter($feedFetcher, $articleSaver);
+
+        $feedImporter->import($source);
+
+        $lock = Cache::lock("feed-import:{$source->id}", 60);
+
+        $this->assertTrue($lock->get());
+
+        $lock->release();
+    }
+
+    public function test_取込失敗後にロックが解放される(): void
+    {
+        $source = Source::create([
+            'name' => 'テストフィード',
+            'feed_url' => 'https://example.com/feed.xml',
+            'site_url' => 'https://example.com',
+            'is_active' => true,
+        ]);
+
+        $feedFetcher = Mockery::mock(FeedFetcher::class);
+        $articleSaver = Mockery::mock(ArticleSaver::class);
+
+        $feedFetcher
+            ->shouldReceive('fetch')
+            ->once()
+            ->andThrow(new \RuntimeException('取得失敗'));
+
+        $articleSaver
+            ->shouldNotReceive('save');
+
+        $feedImporter = new FeedImporter($feedFetcher, $articleSaver);
+
+        try {
+            $feedImporter->import($source);
+
+            $this->fail('RuntimeExceptionが発生しませんでした');
+        } catch (\RuntimeException $exception) {
+            $this->assertSame('取得失敗', $exception->getMessage());
+        }
+
+        $lock = Cache::lock("feed-import:{$source->id}", 60);
+
+        $this->assertTrue($lock->get());
+
+        $lock->release();
     }
 }
