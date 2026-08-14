@@ -7,6 +7,7 @@ use App\Models\Source;
 use App\Models\User;
 use App\Models\UserArticle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class ArticleControllerTest extends TestCase
@@ -1164,5 +1165,145 @@ class ArticleControllerTest extends TestCase
 
         $this->assertFalse($userArticle->is_read);
         $this->assertTrue($userArticle->read_at->equalTo($readAt));
+    }
+
+    public function test_メモを新規保存できる(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $article = Article::factory()->create();
+
+        $response = $this->actingAs($user)
+            ->patchJson("/api/articles/{$article->id}/memo", [
+                'memo' => 'あとで試す',
+            ]);
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('memo', 'あとで試す');
+
+        $this->assertDatabaseHas('user_articles', [
+            'user_id' => $user->id,
+            'article_id' => $article->id,
+            'memo' => 'あとで試す',
+        ]);
+    }
+
+    public function test_既存メモを変更できる(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $article = Article::factory()->create();
+
+        UserArticle::create([
+            'user_id' => $user->id,
+            'article_id' => $article->id,
+            'memo' => '変更前',
+        ]);
+
+        $this->actingAs($user)
+            ->patchJson("/api/articles/{$article->id}/memo", [
+                'memo' => '変更後',
+            ])
+            ->assertOk()
+            ->assertJsonPath('memo', '変更後');
+
+        $this->assertDatabaseHas('user_articles', [
+            'user_id' => $user->id,
+            'article_id' => $article->id,
+            'memo' => '変更後',
+        ]);
+    }
+
+    public function test_nullでメモを削除できる(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $article = Article::factory()->create();
+
+        UserArticle::create([
+            'user_id' => $user->id,
+            'article_id' => $article->id,
+            'memo' => '削除するメモ',
+        ]);
+
+        $this->actingAs($user)
+            ->patchJson("/api/articles/{$article->id}/memo", [
+                'memo' => null,
+            ])
+            ->assertOk()
+            ->assertJsonPath('memo', null);
+
+        $this->assertDatabaseHas('user_articles', [
+            'user_id' => $user->id,
+            'article_id' => $article->id,
+            'memo' => null,
+        ]);
+    }
+
+    #[DataProvider('invalidMemoProvider')]
+    public function test_不正なメモは422になる(array $data): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $article = Article::factory()->create();
+
+        $this->actingAs($user)
+            ->patchJson("/api/articles/{$article->id}/memo", $data)
+            ->assertUnprocessable();
+    }
+
+    public static function invalidMemoProvider(): array
+    {
+        return [
+            '未送信' => [[]],
+            '文字列以外' => [['memo' => ['invalid']]],
+            '5000文字超' => [['memo' => str_repeat('a', 5001)]],
+        ];
+    }
+
+    public function test_他ユーザーのメモは変更しない(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $otherUser = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $article = Article::factory()->create();
+
+        UserArticle::create([
+            'user_id' => $otherUser->id,
+            'article_id' => $article->id,
+            'memo' => '他ユーザーのメモ',
+        ]);
+
+        $this->actingAs($user)
+            ->patchJson("/api/articles/{$article->id}/memo", [
+                'memo' => '自分のメモ',
+            ])
+            ->assertOk();
+
+        $this->assertDatabaseHas('user_articles', [
+            'user_id' => $otherUser->id,
+            'article_id' => $article->id,
+            'memo' => '他ユーザーのメモ',
+        ]);
+
+        $this->assertDatabaseHas('user_articles', [
+            'user_id' => $user->id,
+            'article_id' => $article->id,
+            'memo' => '自分のメモ',
+        ]);
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\IndexArticleRequest;
+use App\Http\Requests\UpdateArticleMemoRequest;
 use App\Http\Requests\UpdateArticleStatusRequest;
 use App\Models\Article;
 use App\Models\UserArticle;
@@ -85,6 +86,21 @@ class ArticleController extends Controller
                 'article_id' => $article->id,
             ],
             $data,
+        );
+
+        return response()->json($userArticle);
+    }
+
+    public function updateMemo(
+        UpdateArticleMemoRequest $request,
+        Article $article
+    ) {
+        $userArticle = UserArticle::updateOrCreate(
+            [
+                'user_id' => $request->user()->id,
+                'article_id' => $article->id,
+            ],
+            $request->validated(),
         );
 
         return response()->json($userArticle);

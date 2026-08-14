@@ -13,6 +13,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::get('/articles', [ArticleController::class, 'index']);
     Route::get('/articles/{article}', [ArticleController::class, 'show']);
     Route::patch('/articles/{article}/status', [ArticleController::class, 'updateStatus']);
+    Route::patch('/articles/{article}/memo', [ArticleController::class, 'updateMemo']);
 
     Route::get('/sources', [SourceController::class, 'index']);
     Route::post('/sources/{source}/subscribe', [SourceController::class, 'subscribe']);
