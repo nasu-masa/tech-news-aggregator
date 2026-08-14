@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\IndexArticleRequest;
 use App\Models\Article;
 use Illuminate\Http\Request;
 
 class ArticleController extends Controller
 {
-    public function index(Request $request)
+    public function index(IndexArticleRequest $request)
     {
         $query = Article::query()
             ->with('source')
@@ -22,6 +23,10 @@ class ArticleController extends Controller
                     ->where('title', 'like', "%{$keyword}%")
                     ->orWhere('summary', 'like', "%{$keyword}%");
             });
+        }
+
+        if ($request->filled('source_id')) {
+            $query->where('source_id', $request->integer('source_id'));
         }
 
         return $query->paginate(20);

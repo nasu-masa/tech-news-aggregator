@@ -365,4 +365,105 @@ class ArticleControllerTest extends TestCase
             ->assertOk()
             ->assertJsonCount(2, 'data');
     }
+
+    public function test_sourceで記事一覧を絞り込める(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($user);
+
+        $sourceA = Source::factory()->create();
+        $sourceB = Source::factory()->create();
+
+        Article::factory()->create([
+            'source_id' => $sourceA->id,
+            'title' => 'SourceAの記事',
+        ]);
+
+        Article::factory()->create([
+            'source_id' => $sourceB->id,
+            'title' => 'SourceBの記事',
+        ]);
+
+        $response = $this->getJson("/api/articles?source_id={$sourceA->id}");
+
+        $response
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.title', 'SourceAの記事');
+    }
+
+    public function test_キーワードとsourceを同時に指定して記事一覧を絞り込める(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($user);
+
+        $sourceA = Source::factory()->create();
+        $sourceB = Source::factory()->create();
+
+        Article::factory()->create([
+            'source_id' => $sourceA->id,
+            'title' => 'Laravelの記事',
+        ]);
+
+        Article::factory()->create([
+            'source_id' => $sourceA->id,
+            'title' => 'Reactの記事',
+        ]);
+
+        Article::factory()->create([
+            'source_id' => $sourceB->id,
+            'title' => 'Laravelの記事',
+        ]);
+
+        $response = $this->getJson(
+            "/api/articles?keyword=Laravel&source_id={$sourceA->id}"
+        );
+
+        $response
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.title', 'Laravelの記事');
+    }
+
+    public function test_source_idが不正な場合は422になる(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($user);
+
+        $response = $this->getJson(
+            '/api/articles?source_id=abc'
+        );
+
+        $response
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'source_id',
+            ]);
+    }
+
+    public function test_存在しないsourceを指定した場合は空の記事一覧が返る(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($user);
+
+        Article::factory()->create();
+
+        $response = $this->getJson('/api/articles?source_id=999999');
+
+        $response
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
+    }
 }
