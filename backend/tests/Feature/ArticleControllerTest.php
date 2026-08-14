@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Article;
 use App\Models\Source;
 use App\Models\User;
+use App\Models\UserArticle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -253,6 +254,64 @@ class ArticleControllerTest extends TestCase
             ->assertJsonPath('source.name', 'Laravel Blog');
     }
 
+    public function test_記事詳細にログインユーザー自身の記事状態が含まれる(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($user);
+
+        $article = Article::factory()->create();
+
+        UserArticle::create([
+            'user_id' => $user->id,
+            'article_id' => $article->id,
+            'is_favorite' => true,
+            'is_read' => true,
+            'is_read_later' => false,
+        ]);
+
+        $response = $this->getJson("/api/articles/{$article->id}");
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('user_articles.0.is_favorite', true)
+            ->assertJsonPath('user_articles.0.is_read', true)
+            ->assertJsonPath('user_articles.0.is_read_later', false);
+    }
+
+    public function test_記事詳細に他ユーザーの記事状態は含まれない(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $otherUser = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($user);
+
+        $article = Article::factory()->create();
+
+        UserArticle::create([
+            'user_id' => $otherUser->id,
+            'article_id' => $article->id,
+            'is_favorite' => true,
+            'is_read' => true,
+            'is_read_later' => true,
+        ]);
+
+        $response = $this->getJson(
+            "/api/articles/{$article->id}"
+        );
+
+        $response
+            ->assertOk()
+            ->assertJsonCount(0, 'user_articles');
+    }
+
     public function test_未認証ユーザーは記事詳細を取得できない(): void
     {
         $article = Article::factory()->create();
@@ -466,4 +525,349 @@ class ArticleControllerTest extends TestCase
             ->assertOk()
             ->assertJsonCount(0, 'data');
     }
+
+    public function test_お気に入り状態を更新できる(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($user);
+
+        $article = Article::factory()->create();
+
+        $response = $this->patchJson(
+            "/api/articles/{$article->id}/status",
+            [
+                'is_favorite' => true,
+            ],
+        );
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('is_favorite', true);
+
+        $this->assertDatabaseHas('user_articles', [
+            'user_id' => $user->id,
+            'article_id' => $article->id,
+            'is_favorite' => true,
+        ]);
+    }
+
+    public function test_既存のお気に入り状態を更新できる(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($user);
+
+        $article = Article::factory()->create();
+
+        UserArticle::create([
+            'user_id' => $user->id,
+            'article_id' => $article->id,
+            'is_favorite' => false,
+        ]);
+
+        $response = $this->patchJson(
+            "/api/articles/{$article->id}/status",
+            [
+                'is_favorite' => true,
+            ],
+        );
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('is_favorite', true);
+
+        $this->assertDatabaseHas('user_articles', [
+            'user_id' => $user->id,
+            'article_id' => $article->id,
+            'is_favorite' => true,
+        ]);
+    }
+
+    public function test_既読状態を更新できる(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($user);
+
+        $article = Article::factory()->create();
+
+        $response = $this->patchJson(
+            "/api/articles/{$article->id}/status",
+            [
+                'is_read' => true,
+            ],
+        );
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('is_read', true);
+
+        $this->assertDatabaseHas('user_articles', [
+            'user_id' => $user->id,
+            'article_id' => $article->id,
+            'is_read' => true,
+        ]);
+    }
+
+    public function test_あとで読む状態を更新できる(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($user);
+
+        $article = Article::factory()->create();
+
+        $response = $this->patchJson(
+            "/api/articles/{$article->id}/status",
+            [
+                'is_read_later' => true,
+            ],
+        );
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('is_read_later', true);
+
+        $this->assertDatabaseHas('user_articles', [
+            'user_id' => $user->id,
+            'article_id' => $article->id,
+            'is_read_later' => true,
+        ]);
+    }
+
+    public function test_複数の記事状態を同時に更新できる(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($user);
+
+        $article = Article::factory()->create();
+
+        $response = $this->patchJson(
+            "/api/articles/{$article->id}/status",
+            [
+                'is_favorite' => true,
+                'is_read' => true,
+                'is_read_later' => true,
+            ],
+        );
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('is_favorite', true)
+            ->assertJsonPath('is_read', true)
+            ->assertJsonPath('is_read_later', true);
+
+        $this->assertDatabaseHas('user_articles', [
+            'user_id' => $user->id,
+            'article_id' => $article->id,
+            'is_favorite' => true,
+            'is_read' => true,
+            'is_read_later' => true,
+        ]);
+    }
+
+    public function test_他ユーザーの記事状態は更新されない(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $otherUser = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $article = Article::factory()->create();
+
+        UserArticle::create([
+            'user_id' => $otherUser->id,
+            'article_id' => $article->id,
+            'is_favorite' => false,
+        ]);
+
+        $this->actingAs($user);
+
+        $response = $this->patchJson(
+            "/api/articles/{$article->id}/status",
+            [
+                'is_favorite' => true,
+            ],
+        );
+
+        $response->assertOk();
+
+        $this->assertDatabaseHas('user_articles', [
+            'user_id' => $otherUser->id,
+            'article_id' => $article->id,
+            'is_favorite' => false,
+        ]);
+
+        $this->assertDatabaseHas('user_articles', [
+            'user_id' => $user->id,
+            'article_id' => $article->id,
+            'is_favorite' => true,
+        ]);
+    }
+
+    public function test_記事状態に不正なboolean値を送ると422になる(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($user);
+
+        $article = Article::factory()->create();
+
+        $response = $this->patchJson(
+            "/api/articles/{$article->id}/status",
+            [
+                'is_favorite' => 'invalid',
+            ],
+        );
+
+        $response
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'is_favorite',
+            ]);
+    }
+
+    public function test_未認証ユーザーは記事状態を更新できない(): void
+    {
+        $article = Article::factory()->create();
+
+        $response = $this->patchJson(
+            "/api/articles/{$article->id}/status",
+            [
+                'is_favorite' => true,
+            ],
+        );
+
+        $response->assertUnauthorized();
+    }
+
+    public function test_メール未認証ユーザーは記事状態を更新できない(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => null,
+        ]);
+
+        $this->actingAs($user);
+
+        $article = Article::factory()->create();
+
+        $response = $this->patchJson(
+            "/api/articles/{$article->id}/status",
+            [
+                'is_favorite' => true,
+            ],
+        );
+
+        $response->assertForbidden();
+    }
+
+    public function test_存在しない記事の状態は更新できない(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($user);
+
+        $response = $this->patchJson(
+            '/api/articles/999999/status',
+            [
+                'is_favorite' => true,
+            ],
+        );
+
+        $response->assertNotFound();
+    }
+
+    public function test_記事状態を何も送らない場合は422になる(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($user);
+
+        $article = Article::factory()->create();
+
+        $response = $this->patchJson(
+            "/api/articles/{$article->id}/status",
+            [],
+        );
+
+        $response->assertUnprocessable();
+    }
+
+    public function test_記事一覧にログインユーザー自身の記事状態が含まれる(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($user);
+
+        $article = Article::factory()->create();
+
+        UserArticle::create([
+            'user_id' => $user->id,
+            'article_id' => $article->id,
+            'is_favorite' => true,
+            'is_read' => true,
+            'is_read_later' => false,
+        ]);
+
+        $response = $this->getJson('/api/articles');
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('data.0.user_articles.0.is_favorite', true)
+            ->assertJsonPath('data.0.user_articles.0.is_read', true)
+            ->assertJsonPath('data.0.user_articles.0.is_read_later', false);
+    }
+
+    public function test_記事一覧に他ユーザーの記事状態は含まれない(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $otherUser = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($user);
+
+        $article = Article::factory()->create();
+
+        UserArticle::create([
+            'user_id' => $otherUser->id,
+            'article_id' => $article->id,
+            'is_favorite' => true,
+            'is_read' => true,
+            'is_read_later' => true,
+        ]);
+
+        $response = $this->getJson('/api/articles');
+
+        $response
+            ->assertOk()
+            ->assertJsonCount(0, 'data.0.user_articles');
+    }
+
 }

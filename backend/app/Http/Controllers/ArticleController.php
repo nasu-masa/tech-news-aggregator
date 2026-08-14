@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\IndexArticleRequest;
+use App\Http\Requests\UpdateArticleStatusRequest;
 use App\Models\Article;
+use App\Models\UserArticle;
 use Illuminate\Http\Request;
 
 class ArticleController extends Controller
@@ -11,7 +13,12 @@ class ArticleController extends Controller
     public function index(IndexArticleRequest $request)
     {
         $query = Article::query()
-            ->with('source')
+            ->with([
+                'source',
+                'userArticles' => function ($query) use ($request) {
+                    $query->where('user_id', $request->user()->id);
+                },
+            ])
             ->orderByRaw('published_at DESC NULLS LAST')
             ->latest('id');
 
@@ -32,8 +39,28 @@ class ArticleController extends Controller
         return $query->paginate(20);
     }
 
-    public function show(Article $article)
+    public function show(Request $request, Article $article)
     {
-        return $article->load('source');
+        return $article->load([
+            'source',
+            'userArticles' => function ($query) use ($request) {
+                $query->where('user_id', $request->user()->id);
+            },
+        ]);
+    }
+
+    public function updateStatus(
+        UpdateArticleStatusRequest $request,
+        Article $article
+    ) {
+        $userArticle = UserArticle::updateOrCreate(
+            [
+                'user_id' => $request->user()->id,
+                'article_id' => $article->id,
+            ],
+            $request->validated(),
+        );
+
+        return response()->json($userArticle);
     }
 }
