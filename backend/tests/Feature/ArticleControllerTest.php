@@ -1079,4 +1079,90 @@ class ArticleControllerTest extends TestCase
             ->assertJsonCount(0, 'data.0.user_articles');
     }
 
+    public function test_既読にするとread_atが保存される(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $article = Article::factory()->create();
+
+        $this->actingAs($user)
+            ->patchJson("/api/articles/{$article->id}/status", [
+                'is_read' => true,
+            ])
+            ->assertOk();
+
+        $userArticle = UserArticle::query()
+            ->where('user_id', $user->id)
+            ->where('article_id', $article->id)
+            ->firstOrFail();
+
+        $this->assertTrue($userArticle->is_read);
+        $this->assertNotNull($userArticle->read_at);
+    }
+
+    public function test_既読以外の状態更新ではread_atが変わらない(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $article = Article::factory()->create();
+
+        $readAt = now()->subHour()->startOfSecond();
+
+        UserArticle::create([
+            'user_id' => $user->id,
+            'article_id' => $article->id,
+            'is_read' => true,
+            'read_at' => $readAt,
+        ]);
+
+        $this->actingAs($user)
+            ->patchJson("/api/articles/{$article->id}/status", [
+                'is_favorite' => true,
+            ])
+            ->assertOk();
+
+        $userArticle = UserArticle::query()
+            ->where('user_id', $user->id)
+            ->where('article_id', $article->id)
+            ->firstOrFail();
+
+        $this->assertTrue($userArticle->is_favorite);
+        $this->assertTrue($userArticle->read_at->equalTo($readAt));
+    }
+
+    public function test_未読に戻してもread_atは維持される(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $article = Article::factory()->create();
+
+        $readAt = now()->subHour()->startOfSecond();
+
+        UserArticle::create([
+            'user_id' => $user->id,
+            'article_id' => $article->id,
+            'is_read' => true,
+            'read_at' => $readAt,
+        ]);
+
+        $this->actingAs($user)
+            ->patchJson("/api/articles/{$article->id}/status", [
+                'is_read' => false,
+            ])
+            ->assertOk();
+
+        $userArticle = UserArticle::query()
+            ->where('user_id', $user->id)
+            ->where('article_id', $article->id)
+            ->firstOrFail();
+
+        $this->assertFalse($userArticle->is_read);
+        $this->assertTrue($userArticle->read_at->equalTo($readAt));
+    }
 }

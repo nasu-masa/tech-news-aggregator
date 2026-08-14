@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'is_read',
     'is_read_later',
     'memo',
+    'read_at',
 )]
 
 class UserArticle extends Model
@@ -23,6 +24,7 @@ class UserArticle extends Model
             'is_favorite' => 'boolean',
             'is_read' => 'boolean',
             'is_read_later' => 'boolean',
+            'read_at' => 'datetime',
         ];
     }
 

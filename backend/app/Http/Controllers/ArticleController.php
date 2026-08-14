@@ -73,12 +73,18 @@ class ArticleController extends Controller
         UpdateArticleStatusRequest $request,
         Article $article
     ) {
+        $data = $request->validated();
+
+        if (($data['is_read'] ?? false) === true) {
+            $data['read_at'] = now();
+        }
+
         $userArticle = UserArticle::updateOrCreate(
             [
                 'user_id' => $request->user()->id,
                 'article_id' => $article->id,
             ],
-            $request->validated(),
+            $data,
         );
 
         return response()->json($userArticle);
