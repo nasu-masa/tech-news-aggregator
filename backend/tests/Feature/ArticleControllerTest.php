@@ -312,6 +312,54 @@ class ArticleControllerTest extends TestCase
             ->assertJsonCount(0, 'user_articles');
     }
 
+    public function test_記事詳細のsourceに購読状態が含まれる(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($user);
+
+        $source = Source::factory()->create();
+
+        $user->sources()->attach($source->id);
+
+        $article = Article::factory()->create([
+            'source_id' => $source->id,
+        ]);
+
+        $response = $this->getJson(
+            "/api/articles/{$article->id}"
+        );
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('source.is_subscribed', true);
+    }
+
+    public function test_未購読sourceの記事詳細では購読状態がfalseになる(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($user);
+
+        $source = Source::factory()->create();
+
+        $article = Article::factory()->create([
+            'source_id' => $source->id,
+        ]);
+
+        $response = $this->getJson(
+            "/api/articles/{$article->id}"
+        );
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('source.is_subscribed', false);
+    }
+
     public function test_未認証ユーザーは記事詳細を取得できない(): void
     {
         $article = Article::factory()->create();
@@ -490,6 +538,39 @@ class ArticleControllerTest extends TestCase
             ->assertJsonPath('data.0.title', 'Laravelの記事');
     }
 
+    public function test_source_idとsubscribed_onlyを同時に指定して絞り込める(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($user);
+
+        $subscribedSource = Source::factory()->create();
+        $otherSource = Source::factory()->create();
+
+        $user->sources()->attach($subscribedSource->id);
+
+        Article::factory()->create([
+            'source_id' => $subscribedSource->id,
+            'title' => '購読中Sourceの記事',
+        ]);
+
+        Article::factory()->create([
+            'source_id' => $otherSource->id,
+            'title' => '未購読Sourceの記事',
+        ]);
+
+        $response = $this->getJson(
+            "/api/articles?source_id={$subscribedSource->id}&subscribed_only=true"
+        );
+
+        $response
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.title', '購読中Sourceの記事');
+    }
+
     public function test_source_idが不正な場合は422になる(): void
     {
         $user = User::factory()->create([
@@ -509,6 +590,25 @@ class ArticleControllerTest extends TestCase
             ]);
     }
 
+    public function test_subscribed_onlyが不正な場合は422になる(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($user);
+
+        $response = $this->getJson(
+            '/api/articles?subscribed_only=invalid'
+        );
+
+        $response
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'subscribed_only',
+            ]);
+    }
+
     public function test_存在しないsourceを指定した場合は空の記事一覧が返る(): void
     {
         $user = User::factory()->create([
@@ -524,6 +624,115 @@ class ArticleControllerTest extends TestCase
         $response
             ->assertOk()
             ->assertJsonCount(0, 'data');
+    }
+
+    public function test_subscribed_onlyで購読中sourceの記事だけ取得できる(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($user);
+
+        $subscribedSource = Source::factory()->create();
+        $otherSource = Source::factory()->create();
+
+        $user->sources()->attach($subscribedSource->id);
+
+        Article::factory()->create([
+            'source_id' => $subscribedSource->id,
+            'title' => '購読中の記事',
+        ]);
+
+        Article::factory()->create([
+            'source_id' => $otherSource->id,
+            'title' => '未購読の記事',
+        ]);
+
+        $response = $this->getJson(
+            '/api/articles?subscribed_only=true'
+        );
+
+        $response
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.title', '購読中の記事');
+    }
+
+    public function test_subscribed_onlyがfalseなら全記事を取得できる(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($user);
+
+        $subscribedSource = Source::factory()->create();
+        $otherSource = Source::factory()->create();
+
+        $user->sources()->attach($subscribedSource->id);
+
+        Article::factory()->create([
+            'source_id' => $subscribedSource->id,
+            'title' => '購読中の記事',
+        ]);
+
+        Article::factory()->create([
+            'source_id' => $otherSource->id,
+            'title' => '未購読の記事',
+        ]);
+
+        $response = $this->getJson(
+            '/api/articles?subscribed_only=false'
+        );
+
+        $response
+            ->assertOk()
+            ->assertJsonCount(2, 'data');
+    }
+
+    public function test_記事一覧のsourceに購読状態が含まれる(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($user);
+
+        $source = Source::factory()->create();
+
+        $user->sources()->attach($source->id);
+
+        Article::factory()->create([
+            'source_id' => $source->id,
+        ]);
+
+        $response = $this->getJson('/api/articles');
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('data.0.source.is_subscribed', true);
+    }
+
+    public function test_未購読sourceなら購読状態はfalseになる(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($user);
+
+        $source = Source::factory()->create();
+
+        Article::factory()->create([
+            'source_id' => $source->id,
+        ]);
+
+        $response = $this->getJson('/api/articles');
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('data.0.source.is_subscribed', false);
     }
 
     public function test_お気に入り状態を更新できる(): void

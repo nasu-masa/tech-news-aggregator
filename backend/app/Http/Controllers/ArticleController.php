@@ -14,7 +14,13 @@ class ArticleController extends Controller
     {
         $query = Article::query()
             ->with([
-                'source',
+                'source' => function ($query) use ($request) {
+                    $query->withExists([
+                        'users as is_subscribed' => function ($query) use ($request) {
+                            $query->where('users.id', $request->user()->id);
+                        },
+                    ]);
+                },
                 'userArticles' => function ($query) use ($request) {
                     $query->where('user_id', $request->user()->id);
                 },
@@ -36,17 +42,31 @@ class ArticleController extends Controller
             $query->where('source_id', $request->integer('source_id'));
         }
 
+        if ($request->boolean('subscribed_only')) {
+            $query->whereHas('source.users', function ($query) use ($request) {
+                $query->where('users.id', $request->user()->id);
+            });
+        }
+
         return $query->paginate(20);
     }
 
     public function show(Request $request, Article $article)
     {
-        return $article->load([
-            'source',
+        $article->load([
+            'source' => function ($query) use ($request) {
+                $query->withExists([
+                    'users as is_subscribed' => function ($query) use ($request) {
+                        $query->where('users.id', $request->user()->id);
+                    },
+                ]);
+            },
             'userArticles' => function ($query) use ($request) {
                 $query->where('user_id', $request->user()->id);
             },
         ]);
+
+        return $article;
     }
 
     public function updateStatus(
