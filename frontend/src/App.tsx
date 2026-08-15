@@ -1,6 +1,7 @@
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import VerifiedRoute from "./components/auth/VerifiedRoute";
 import AppLayout from "./components/layout/AppLayout";
+import ArticleLayout from "./components/layout/ArticleLayout";
 import ArticleDetailPage from "./pages/ArticleDetailPage.tsx";
 import ArticleListPage from "./pages/ArticleListPage";
 import LoginPage from "./pages/LoginPage";
@@ -22,26 +23,28 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <VerifiedRoute>
-                <ArticleListPage />
-              </VerifiedRoute>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/articles/:id"
-          element={
-            <ProtectedRoute>
-              <VerifiedRoute>
-                <ArticleDetailPage />
-              </VerifiedRoute>
-            </ProtectedRoute>
-          }
-        />
+        <Route element={<ArticleLayout />}>
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <VerifiedRoute>
+                  <ArticleListPage />
+                </VerifiedRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/articles/:id"
+            element={
+              <ProtectedRoute>
+                <VerifiedRoute>
+                  <ArticleDetailPage />
+                </VerifiedRoute>
+              </ProtectedRoute>
+            }
+          />
+        </Route>
       </Route>
     </Routes>
   );
