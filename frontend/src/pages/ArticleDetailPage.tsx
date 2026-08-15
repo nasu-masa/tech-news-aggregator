@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { getArticle } from "../api/articles";
+import {
+    getArticle,
+    updateArticleStatus,
+    type UpdateArticleStatusData,
+} from "../api/articles";
 import type { Article } from "../types/article";
 
 function ArticleDetailPage() {
@@ -23,6 +27,15 @@ function ArticleDetailPage() {
         return <p>読み込み中...</p>;
     }
 
+    const handleStatusUpdate = async (data: UpdateArticleStatusData) => {
+        if (!id) return;
+
+        await updateArticleStatus(Number(id), data);
+
+        const updatedArticle = await getArticle(Number(id));
+        setArticle(updatedArticle);
+    };
+
     const userArticle = article.user_articles[0];
 
     return (
@@ -41,6 +54,19 @@ function ArticleDetailPage() {
 
             <div>
             <p>{userArticle?.is_read ? "既読" : "未読"}</p>
+
+            <button
+                type="button"
+                onClick={() =>
+                handleStatusUpdate({
+                    is_favorite: !(userArticle?.is_favorite ?? false),
+                })
+                }
+            >
+                {userArticle?.is_favorite
+                ? "お気に入りから外す"
+                : "お気に入りに追加"}
+            </button>
 
             <p>
                 {userArticle?.is_read_later
