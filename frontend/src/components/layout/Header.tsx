@@ -6,28 +6,28 @@ function Header() {
   const { user } = useAuth();
 
   return (
-    <header className="bg-white border-b border-green-100">
-      <div className="max-w-screen-xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14">
+    <header className="border-b border-gray-200 bg-white">
+      <div className="mx-auto flex h-16 max-w-screen-xl items-center justify-between gap-4 px-4 sm:px-6">
         <Link
           to="/"
-          className="text-green-800 font-semibold text-lg tracking-tight hover:text-green-700"
+          className="text-base font-semibold tracking-tight text-green-800 transition-colors hover:text-green-700 focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700/40 sm:text-lg"
         >
           Tech News Aggregator
         </Link>
-        <nav className="flex items-center gap-3">
+        <nav aria-label="メインナビゲーション" className="flex items-center gap-2 sm:gap-3">
           {user ? (
-            <LogoutButton className="text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded px-3 py-1.5 cursor-pointer" />
+            <LogoutButton className="cursor-pointer rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700/40" />
           ) : (
             <>
               <Link
                 to="/login"
-                className="text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded px-3 py-1.5"
+                className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700/40"
               >
                 ログイン
               </Link>
               <Link
                 to="/register"
-                className="text-sm bg-green-700 text-white rounded px-3 py-1.5 hover:bg-green-800"
+                className="rounded-md bg-green-700 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-green-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700/40"
               >
                 会員登録
               </Link>

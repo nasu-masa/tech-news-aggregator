@@ -32,17 +32,17 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/articles/:id"
+          element={
+            <ProtectedRoute>
+              <VerifiedRoute>
+                <ArticleDetailPage />
+              </VerifiedRoute>
+            </ProtectedRoute>
+          }
+        />
       </Route>
-      <Route
-        path="/articles/:id"
-        element={
-          <ProtectedRoute>
-            <VerifiedRoute>
-              <ArticleDetailPage />
-            </VerifiedRoute>
-          </ProtectedRoute>
-        }
-      />
     </Routes>
   );
 }
