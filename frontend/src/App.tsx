@@ -1,6 +1,7 @@
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import VerifiedRoute from "./components/auth/VerifiedRoute";
 import AppLayout from "./components/layout/AppLayout";
+import ArticleDetailPage from "./pages/ArticleDetailPage.tsx";
 import ArticleListPage from "./pages/ArticleListPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
@@ -32,6 +33,16 @@ function App() {
           }
         />
       </Route>
+      <Route
+        path="/articles/:id"
+        element={
+          <ProtectedRoute>
+            <VerifiedRoute>
+              <ArticleDetailPage />
+            </VerifiedRoute>
+          </ProtectedRoute>
+        }
+      />
     </Routes>
   );
 }
