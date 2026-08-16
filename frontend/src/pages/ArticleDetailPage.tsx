@@ -69,9 +69,9 @@ function ArticleDetailPage() {
 
   if (isLoading) {
     return (
-      <main className="flex-1 px-4 py-8 sm:px-6 sm:py-10">
+      <main className="flex-1 px-4 py-8 sm:px-6 sm:py-10 lg:px-0">
         <div
-          className="mx-auto max-w-4xl rounded-lg border border-gray-200 bg-white px-6 py-12 text-center text-sm text-gray-600 shadow-sm"
+          className="mx-auto max-w-4xl rounded-lg border border-gray-200 bg-white px-6 py-12 text-center text-sm text-gray-600 shadow-sm lg:mx-0"
           role="status"
         >
           記事を読み込んでいます...
@@ -82,8 +82,8 @@ function ArticleDetailPage() {
 
   if (errorMessage || !article) {
     return (
-      <main className="flex-1 px-4 py-8 text-left sm:px-6 sm:py-10">
-        <div className="mx-auto max-w-4xl">
+      <main className="flex-1 px-4 py-8 text-left sm:px-6 sm:py-10 lg:px-0">
+        <div className="mx-auto max-w-4xl lg:mx-0">
           <div
             className="rounded-lg border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
             role="alert"
@@ -107,8 +107,8 @@ function ArticleDetailPage() {
   const isReadLater = status?.is_read_later ?? false;
 
   return (
-    <main className="flex-1 px-4 py-8 text-left sm:px-6 sm:py-10">
-      <div className="mx-auto max-w-4xl">
+    <main className="flex-1 px-4 py-8 text-left sm:px-6 sm:py-10 lg:px-0">
+      <div className="mx-auto max-w-4xl lg:mx-0">
         <Link
           to="/"
           className="mb-5 inline-flex rounded-md text-sm font-medium text-gray-600 transition-colors hover:text-green-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700/40"

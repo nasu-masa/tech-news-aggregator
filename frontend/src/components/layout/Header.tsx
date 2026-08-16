@@ -7,7 +7,7 @@ function Header() {
 
   return (
     <header className="border-b border-gray-200 bg-white">
-      <div className="mx-auto flex h-16 max-w-screen-xl items-center justify-between gap-4 px-4 sm:px-6">
+      <div className="mx-auto flex h-16 max-w-screen-2xl items-center justify-between gap-4 px-4 sm:px-6">
         <Link
           to="/"
           className="text-base font-semibold tracking-tight text-green-800 transition-colors hover:text-green-700 focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700/40 sm:text-lg"
