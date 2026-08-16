@@ -1,29 +1,110 @@
-import { NavLink } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { getSources } from "../../api/sources";
+import { parsePositiveIntegerParam } from "../../lib/parsePositiveIntegerParam";
+import type { Source } from "../../types/source";
 
 function DesktopSidebar() {
+  const [searchParams] = useSearchParams();
+  const selectedSourceId = parsePositiveIntegerParam(
+    searchParams.get("source_id"),
+  );
+  const [sources, setSources] = useState<Source[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    let ignore = false;
+
+    const fetchSources = async () => {
+      try {
+        const data = await getSources();
+        if (!ignore) setSources(data);
+      } catch {
+        if (!ignore) setErrorMessage("配信元を取得できませんでした。");
+      } finally {
+        if (!ignore) setIsLoading(false);
+      }
+    };
+
+    void fetchSources();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
   return (
     <aside className="hidden w-56 shrink-0 py-10 lg:block">
       <nav
         aria-label="記事ナビゲーション"
-        className="rounded-lg border border-gray-200 bg-white p-3"
+        className="max-h-[calc(100vh-8rem)] overflow-y-auto rounded-lg border border-gray-200 bg-white p-3"
       >
         <p className="mb-2 px-3 text-xs font-semibold tracking-wide text-gray-500">
           記事メニュー
         </p>
-        <NavLink
+        <Link
           to="/"
-          end
-          className={({ isActive }) =>
-            [
-              "block rounded-md px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700/40",
-              isActive
-                ? "bg-green-50 text-green-800"
-                : "text-gray-700 hover:bg-gray-50 hover:text-green-800",
-            ].join(" ")
-          }
+          aria-current={selectedSourceId === undefined ? "page" : undefined}
+          className={`block rounded-md px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700/40 ${
+            selectedSourceId === undefined
+              ? "bg-green-50 text-green-800"
+              : "text-gray-700 hover:bg-gray-50 hover:text-green-800"
+          }`}
         >
           すべての記事
-        </NavLink>
+        </Link>
+
+        <section className="mt-4 border-t border-gray-100 pt-4">
+          <h2 className="mb-2 px-3 text-xs font-semibold tracking-wide text-gray-500">
+            配信元
+          </h2>
+
+          {isLoading && (
+            <p className="px-3 py-2 text-sm text-gray-500" role="status">
+              読み込み中...
+            </p>
+          )}
+
+          {!isLoading && errorMessage && (
+            <p className="px-3 py-2 text-sm leading-relaxed text-red-700" role="alert">
+              {errorMessage}
+            </p>
+          )}
+
+          {!isLoading && !errorMessage && sources.length === 0 && (
+            <p className="px-3 py-2 text-sm text-gray-500">
+              配信元がありません。
+            </p>
+          )}
+
+          {!isLoading && !errorMessage && sources.length > 0 && (
+            <ul className="space-y-1">
+              {sources.map((source) => (
+                <li key={source.id}>
+                  <Link
+                    to={`/?source_id=${source.id}`}
+                    aria-current={
+                      selectedSourceId === source.id ? "page" : undefined
+                    }
+                    className={`flex items-start justify-between gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700/40 ${
+                      selectedSourceId === source.id
+                        ? "bg-green-50 text-green-800"
+                        : "text-gray-700 hover:bg-gray-50 hover:text-green-800"
+                    }`}
+                  >
+                    <span className="min-w-0 break-words">{source.name}</span>
+                    {source.is_subscribed && (
+                      <span className="shrink-0 rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-800">
+                        追加済み
+                      </span>
+                    )}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </nav>
     </aside>
   );

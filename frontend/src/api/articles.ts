@@ -9,14 +9,22 @@ type ArticleListResponse = {
     total: number;
 };
 
+export type ArticleListParams = {
+    source_id?: number;
+};
+
 export type UpdateArticleStatusData = {
     is_favorite?: boolean;
     is_read?: boolean;
     is_read_later?: boolean;
 };
 
-export async function getArticles(): Promise<ArticleListResponse> {
-    const response = await apiClient.get<ArticleListResponse>("/api/articles");
+export async function getArticles(
+    params: ArticleListParams = {},
+): Promise<ArticleListResponse> {
+    const response = await apiClient.get<ArticleListResponse>("/api/articles", {
+        params,
+    });
 
     return response.data;
 }

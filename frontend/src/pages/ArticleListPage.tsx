@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { getArticles } from "../api/articles";
 import { StatusBadge } from "../components/articles/ArticleStatus";
 import { formatArticleDate } from "../lib/formatArticleDate";
+import { parsePositiveIntegerParam } from "../lib/parsePositiveIntegerParam";
 import type { Article } from "../types/article";
 
 function ArticleListPage() {
+  const [searchParams] = useSearchParams();
+  const sourceId = parsePositiveIntegerParam(searchParams.get("source_id"));
   const [articles, setArticles] = useState<Article[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
@@ -14,8 +17,12 @@ function ArticleListPage() {
     let ignore = false;
 
     const fetchArticles = async () => {
+      setArticles([]);
+      setIsLoading(true);
+      setErrorMessage("");
+
       try {
-        const response = await getArticles();
+        const response = await getArticles({ source_id: sourceId });
         if (!ignore) setArticles(response.data);
       } catch {
         if (!ignore) {
@@ -33,11 +40,11 @@ function ArticleListPage() {
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [sourceId]);
 
   return (
-    <main className="flex-1 px-4 py-8 text-left sm:px-6 sm:py-10">
-      <div className="mx-auto max-w-6xl">
+    <main className="flex-1 px-4 py-8 text-left sm:px-6 sm:py-10 lg:px-0">
+      <div className="w-full">
         <div className="mb-7 sm:mb-8">
           <p className="mb-1 text-sm font-medium text-green-700">MY NEWS</p>
           <h1 className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">
