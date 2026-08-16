@@ -1,10 +1,4 @@
-export type ArticleSource = {
-    id: number;
-    name: string;
-    feed_url: string;
-    site_url: string;
-    is_subscribed: boolean;
-};
+import type { Source } from "./source";
 
 export type UserArticle = {
     id: number;
@@ -24,6 +18,6 @@ export type Article = {
     summary: string | null;
     url: string;
     published_at: string | null;
-    source: ArticleSource;
+    source: Source;
     user_articles: UserArticle[];
 };
