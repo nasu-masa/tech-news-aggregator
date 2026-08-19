@@ -49,6 +49,34 @@ class ArticleController extends Controller
             });
         }
 
+        if ($request->filled('status')) {
+            $status = $request->string('status')->toString();
+
+            if ($status === 'favorite') {
+                $query->whereHas('userArticles', function ($query) use ($request) {
+                    $query
+                        ->where('user_id', $request->user()->id)
+                        ->where('is_favorite', true);
+                });
+            }
+
+            if ($status === 'read_later') {
+                $query->whereHas('userArticles', function ($query) use ($request) {
+                    $query
+                        ->where('user_id', $request->user()->id)
+                        ->where('is_read_later', true);
+                });
+            }
+
+            if ($status === 'unread') {
+                $query->whereDoesntHave('userArticles', function ($query) use ($request) {
+                    $query
+                        ->where('user_id', $request->user()->id)
+                        ->where('is_read', true);
+                });
+            }
+        }
+
         return $query->paginate(20);
     }
 

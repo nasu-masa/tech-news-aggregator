@@ -1306,4 +1306,168 @@ class ArticleControllerTest extends TestCase
             'memo' => '自分のメモ',
         ]);
     }
+
+    #[DataProvider('savedStatusFilterProvider')]
+    public function test_保存状態で記事一覧を絞り込める(
+        string $status,
+        string $field,
+    ): void {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $matchedArticle = Article::factory()->create();
+        Article::factory()->create();
+
+        UserArticle::create([
+            'user_id' => $user->id,
+            'article_id' => $matchedArticle->id,
+            $field => true,
+        ]);
+
+        $this->actingAs($user)
+            ->getJson("/api/articles?status={$status}")
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $matchedArticle->id);
+    }
+
+    public static function savedStatusFilterProvider(): array
+    {
+        return [
+            'お気に入り' => ['favorite', 'is_favorite'],
+            'あとで見る' => ['read_later', 'is_read_later'],
+        ];
+    }
+
+    public function test_未読状態で記事一覧を絞り込める(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $withoutStatusArticle = Article::factory()->create();
+        $unreadArticle = Article::factory()->create();
+        $readArticle = Article::factory()->create();
+
+        UserArticle::create([
+            'user_id' => $user->id,
+            'article_id' => $unreadArticle->id,
+            'is_read' => false,
+        ]);
+
+        UserArticle::create([
+            'user_id' => $user->id,
+            'article_id' => $readArticle->id,
+            'is_read' => true,
+        ]);
+
+        $response = $this->actingAs($user)
+            ->getJson('/api/articles?status=unread')
+            ->assertOk()
+            ->assertJsonCount(2, 'data');
+
+        $this->assertEqualsCanonicalizing(
+            [
+                $withoutStatusArticle->id,
+                $unreadArticle->id,
+            ],
+            $response->json('data.*.id'),
+        );
+    }
+
+    public function test_他ユーザーの記事状態は絞り込みに影響しない(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+        $otherUser = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+        $article = Article::factory()->create();
+
+        UserArticle::create([
+            'user_id' => $otherUser->id,
+            'article_id' => $article->id,
+            'is_read' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->getJson('/api/articles?status=unread')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $article->id);
+    }
+
+    #[DataProvider('savedStatusFilterProvider')]
+    public function test_他ユーザーの保存状態は絞り込みに影響しない(
+        string $status,
+        string $field,
+    ): void {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+        $otherUser = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+        $article = Article::factory()->create();
+
+        UserArticle::create([
+            'user_id' => $otherUser->id,
+            'article_id' => $article->id,
+            $field => true,
+        ]);
+
+        $this->actingAs($user)
+            ->getJson("/api/articles?status={$status}")
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
+    }
+
+    public function test_source_idとstatusを同時に指定して絞り込める(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+        $sourceA = Source::factory()->create();
+        $sourceB = Source::factory()->create();
+
+        $matchedArticle = Article::factory()->create([
+            'source_id' => $sourceA->id,
+        ]);
+        $otherSourceArticle = Article::factory()->create([
+            'source_id' => $sourceB->id,
+        ]);
+        Article::factory()->create([
+            'source_id' => $sourceA->id,
+        ]);
+
+        foreach ([$matchedArticle, $otherSourceArticle] as $article) {
+            UserArticle::create([
+                'user_id' => $user->id,
+                'article_id' => $article->id,
+                'is_favorite' => true,
+            ]);
+        }
+
+        $this->actingAs($user)
+            ->getJson(
+                "/api/articles?source_id={$sourceA->id}&status=favorite"
+            )
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $matchedArticle->id);
+    }
+
+    public function test_不正な記事状態を指定すると422になる(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->getJson('/api/articles?status=invalid')
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('status');
+    }
 }
