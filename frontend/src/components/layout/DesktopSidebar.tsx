@@ -1,17 +1,60 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { getSources } from "../../api/sources";
+import {
+  parseArticleStatusFilter,
+  type ArticleStatusFilter,
+} from "../../lib/articleFilters";
 import { parsePositiveIntegerParam } from "../../lib/parsePositiveIntegerParam";
 import type { Source } from "../../types/source";
+
+const statusFilters: {
+  label: string;
+  value: ArticleStatusFilter;
+}[] = [
+  { label: "未読", value: "unread" },
+  { label: "お気に入り", value: "favorite" },
+  { label: "あとで見る", value: "read_later" },
+];
 
 function DesktopSidebar() {
   const [searchParams] = useSearchParams();
   const selectedSourceId = parsePositiveIntegerParam(
     searchParams.get("source_id"),
   );
+  const status = parseArticleStatusFilter(searchParams.get("status"));
+
   const [sources, setSources] = useState<Source[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+
+  const createFilterUrl = ({
+    sourceId,
+    status: nextStatus,
+  }: {
+    sourceId?: number | null;
+    status?: ArticleStatusFilter | null;
+  }) => {
+    const nextSearchParams = new URLSearchParams(searchParams);
+
+    if (sourceId === null) {
+      nextSearchParams.delete("source_id");
+    } else if (sourceId !== undefined) {
+      nextSearchParams.set("source_id", String(sourceId));
+    }
+
+    if (nextStatus === null) {
+      nextSearchParams.delete("status");
+    } else if (nextStatus !== undefined) {
+      nextSearchParams.set("status", nextStatus);
+    }
+
+    nextSearchParams.delete("page");
+
+    const query = nextSearchParams.toString();
+
+    return query ? `/?${query}` : "/";
+  };
 
   useEffect(() => {
     let ignore = false;
@@ -44,16 +87,39 @@ function DesktopSidebar() {
           記事メニュー
         </p>
         <Link
-          to="/"
-          aria-current={selectedSourceId === undefined ? "page" : undefined}
+          to={createFilterUrl({ sourceId: null, status: null })}
+          aria-current={
+            selectedSourceId === undefined && status === undefined
+              ? "page"
+              : undefined
+          }
           className={`block rounded-md px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700/40 ${
-            selectedSourceId === undefined
+            selectedSourceId === undefined && status === undefined
               ? "bg-green-50 text-green-800"
               : "text-gray-700 hover:bg-gray-50 hover:text-green-800"
           }`}
         >
           すべての記事
         </Link>
+
+        {statusFilters.map((filter) => {
+          const isActive = status === filter.value;
+
+          return (
+            <Link
+              key={filter.value}
+              to={createFilterUrl({ status: filter.value })}
+              aria-current={isActive ? "page" : undefined}
+              className={`block rounded-md px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700/40 ${
+                isActive
+                  ? "bg-green-50 text-green-800"
+                  : "text-gray-700 hover:bg-gray-50 hover:text-green-800"
+              }`}
+            >
+              {filter.label}
+            </Link>
+          );
+        })}
 
         <section className="mt-4 border-t border-gray-100 pt-4">
           <h2 className="mb-2 px-3 text-xs font-semibold tracking-wide text-gray-500">
@@ -67,7 +133,10 @@ function DesktopSidebar() {
           )}
 
           {!isLoading && errorMessage && (
-            <p className="px-3 py-2 text-sm leading-relaxed text-red-700" role="alert">
+            <p
+              className="px-3 py-2 text-sm leading-relaxed text-red-700"
+              role="alert"
+            >
               {errorMessage}
             </p>
           )}
@@ -83,7 +152,7 @@ function DesktopSidebar() {
               {sources.map((source) => (
                 <li key={source.id}>
                   <Link
-                    to={`/?source_id=${source.id}`}
+                    to={createFilterUrl({ sourceId: source.id })}
                     aria-current={
                       selectedSourceId === source.id ? "page" : undefined
                     }

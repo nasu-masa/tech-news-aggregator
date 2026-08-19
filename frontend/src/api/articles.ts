@@ -1,48 +1,50 @@
 import apiClient from "../lib/apiClient";
+import type { ArticleStatusFilter } from "../lib/articleFilters";
 import type { Article, UserArticle } from "../types/article";
 
 type ArticleListResponse = {
-    current_page: number;
-    data: Article[];
-    last_page: number;
-    per_page: number;
-    total: number;
+  current_page: number;
+  data: Article[];
+  last_page: number;
+  per_page: number;
+  total: number;
 };
 
 export type ArticleListParams = {
-    source_id?: number;
+  source_id?: number;
+  status?: ArticleStatusFilter;
 };
 
 export type UpdateArticleStatusData = {
-    is_favorite?: boolean;
-    is_read?: boolean;
-    is_read_later?: boolean;
+  is_favorite?: boolean;
+  is_read?: boolean;
+  is_read_later?: boolean;
 };
 
 export async function getArticles(
-    params: ArticleListParams = {},
+  params: ArticleListParams = {},
 ): Promise<ArticleListResponse> {
-    const response = await apiClient.get<ArticleListResponse>("/api/articles", {
-        params,
-    });
+  const response = await apiClient.get<ArticleListResponse>("/api/articles", {
+    params,
+  });
 
-    return response.data;
+  return response.data;
 }
 
 export async function getArticle(id: number): Promise<Article> {
-    const response = await apiClient.get<Article>(`/api/articles/${id}`);
+  const response = await apiClient.get<Article>(`/api/articles/${id}`);
 
-    return response.data;
+  return response.data;
 }
 
 export async function updateArticleStatus(
-    id: number,
-    data: UpdateArticleStatusData,
+  id: number,
+  data: UpdateArticleStatusData,
 ): Promise<UserArticle> {
-    const response = await apiClient.patch<UserArticle>(
-        `/api/articles/${id}/status`,
-        data,
-    );
+  const response = await apiClient.patch<UserArticle>(
+    `/api/articles/${id}/status`,
+    data,
+  );
 
-    return response.data;
+  return response.data;
 }

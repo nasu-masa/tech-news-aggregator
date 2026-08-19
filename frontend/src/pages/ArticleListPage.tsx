@@ -2,13 +2,18 @@ import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { getArticles } from "../api/articles";
 import { StatusBadge } from "../components/articles/ArticleStatus";
+import { parseArticleStatusFilter } from "../lib/articleFilters";
 import { formatArticleDate } from "../lib/formatArticleDate";
 import { parsePositiveIntegerParam } from "../lib/parsePositiveIntegerParam";
+import MobileArticleFilters from "../components/articles/MobileArticleFilters";
 import type { Article } from "../types/article";
 
 function ArticleListPage() {
   const [searchParams] = useSearchParams();
   const sourceId = parsePositiveIntegerParam(searchParams.get("source_id"));
+
+  const status = parseArticleStatusFilter(searchParams.get("status"));
+
   const [articles, setArticles] = useState<Article[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
@@ -22,7 +27,10 @@ function ArticleListPage() {
       setErrorMessage("");
 
       try {
-        const response = await getArticles({ source_id: sourceId });
+        const response = await getArticles({
+          source_id: sourceId,
+          status,
+        });
         if (!ignore) setArticles(response.data);
       } catch {
         if (!ignore) {
@@ -40,7 +48,7 @@ function ArticleListPage() {
     return () => {
       ignore = true;
     };
-  }, [sourceId]);
+  }, [sourceId, status]);
 
   return (
     <main className="flex-1 px-4 py-8 text-left sm:px-6 sm:py-10 lg:px-0">
@@ -54,6 +62,8 @@ function ArticleListPage() {
             気になる技術ニュースを選び、詳細や保存状態を確認できます。
           </p>
         </div>
+
+        <MobileArticleFilters />
 
         {isLoading && (
           <div
