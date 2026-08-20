@@ -9,14 +9,20 @@ import MobileArticleFilters from "../components/articles/MobileArticleFilters";
 import type { Article } from "../types/article";
 
 function ArticleListPage() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const sourceId = parsePositiveIntegerParam(searchParams.get("source_id"));
 
   const status = parseArticleStatusFilter(searchParams.get("status"));
 
+  const page = parsePositiveIntegerParam(searchParams.get("page")) ?? 1;
+
   const [articles, setArticles] = useState<Article[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
+
+  const hasFilters = sourceId !== undefined || status !== undefined;
 
   useEffect(() => {
     let ignore = false;
@@ -30,8 +36,35 @@ function ArticleListPage() {
         const response = await getArticles({
           source_id: sourceId,
           status,
+          page,
         });
-        if (!ignore) setArticles(response.data);
+        if (!ignore) {
+          if (
+            response.total > 0 &&
+            page > response.last_page
+          ) {
+            setSearchParams(
+              (currentParams) => {
+                const nextSearchParams = new URLSearchParams(currentParams);
+
+                if (response.last_page <= 1) {
+                  nextSearchParams.delete("page");
+                } else {
+                  nextSearchParams.set("page", String(response.last_page));
+                }
+
+                return nextSearchParams;
+              },
+              { replace: true },
+            );
+
+            return;
+          }
+
+          setArticles(response.data);
+          setCurrentPage(response.current_page);
+          setLastPage(response.last_page);
+        }
       } catch {
         if (!ignore) {
           setErrorMessage(
@@ -48,7 +81,19 @@ function ArticleListPage() {
     return () => {
       ignore = true;
     };
-  }, [sourceId, status]);
+  }, [sourceId, status, page, setSearchParams]);
+
+  const handlePageChange = (nextPage: number) => {
+    const nextSearchParams = new URLSearchParams(searchParams);
+
+    if (nextPage <= 1) {
+      nextSearchParams.delete("page");
+    } else {
+      nextSearchParams.set("page", String(nextPage));
+    }
+
+    setSearchParams(nextSearchParams);
+  };
 
   return (
     <main className="flex-1 px-4 py-8 text-left sm:px-6 sm:py-10 lg:px-0">
@@ -86,10 +131,15 @@ function ArticleListPage() {
         {!isLoading && !errorMessage && articles.length === 0 && (
           <div className="rounded-lg border border-gray-200 bg-white px-6 py-12 text-center shadow-sm">
             <h2 className="text-base font-semibold text-gray-900">
-              表示できる記事はまだありません
+              {hasFilters
+                ? "条件に一致する記事がありません。"
+                : "まだ記事がありません。"}
             </h2>
+
             <p className="mt-2 text-sm text-gray-600">
-              記事が取得されると、ここに一覧で表示されます。
+              {hasFilters
+                ? "絞り込み条件を変更して、もう一度お試しください。"
+                : "記事が取得されると、ここに一覧で表示されます。"}
             </p>
           </div>
         )}
@@ -117,6 +167,7 @@ function ArticleListPage() {
                   <h2 className="text-lg font-semibold leading-snug tracking-tight text-gray-900 sm:text-xl">
                     <Link
                       to={`/articles/${article.id}`}
+                      state={{ fromSearch: searchParams.toString() }}
                       className="rounded-sm transition-colors hover:text-green-800 hover:underline hover:underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700/40"
                     >
                       {article.title}
@@ -147,6 +198,35 @@ function ArticleListPage() {
               );
             })}
           </div>
+        )}
+
+        {!isLoading && !errorMessage && articles.length > 0 && (
+          <nav
+            className="mt-8 flex items-center justify-center gap-4"
+            aria-label="記事一覧のページネーション"
+          >
+            <button
+              type="button"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage <= 1}
+              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              前へ
+            </button>
+
+            <span className="text-sm text-gray-600">
+              {currentPage} / {lastPage}
+            </span>
+
+            <button
+              type="button"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage >= lastPage}
+              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              次へ
+            </button>
+          </nav>
         )}
       </div>
     </main>

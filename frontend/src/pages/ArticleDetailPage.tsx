@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import {
   getArticle,
+  updateArticleMemo,
   updateArticleStatus,
   type UpdateArticleStatusData,
 } from "../api/articles";
@@ -12,11 +13,26 @@ import type { Article } from "../types/article";
 function ArticleDetailPage() {
   const { id } = useParams();
   const articleId = Number(id);
+
   const [article, setArticle] = useState<Article | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [updateError, setUpdateError] = useState("");
+
+  const [memo, setMemo] = useState("");
+  const [isSavingMemo, setIsSavingMemo] = useState(false);
+  const [memoMessage, setMemoMessage] = useState("");
+  const [memoError, setMemoError] = useState("");
+
+  const location = useLocation();
+
+  const fromSearch =
+    typeof location.state?.fromSearch === "string"
+      ? location.state.fromSearch
+      : "";
+
+  const articleListUrl = fromSearch ? `/?${fromSearch}` : "/";
 
   useEffect(() => {
     let ignore = false;
@@ -30,7 +46,11 @@ function ArticleDetailPage() {
 
       try {
         const response = await getArticle(articleId);
-        if (!ignore) setArticle(response);
+
+        if (!ignore) {
+          setArticle(response);
+          setMemo(response.user_articles[0]?.memo ?? "");
+        }
       } catch {
         if (!ignore) {
           setErrorMessage(
@@ -57,13 +77,81 @@ function ArticleDetailPage() {
 
     try {
       const updatedStatus = await updateArticleStatus(articleId, data);
-      setArticle({ ...article, user_articles: [updatedStatus] });
+      setArticle((currentArticle) => {
+        if (!currentArticle) return currentArticle;
+
+        const currentStatus = currentArticle.user_articles[0];
+
+        return {
+          ...currentArticle,
+          user_articles: [
+            {
+              ...updatedStatus,
+              memo:
+                currentStatus !== undefined
+                  ? currentStatus.memo
+                  : updatedStatus.memo,
+            },
+          ],
+        };
+      });
     } catch {
       setUpdateError(
         "状態を更新できませんでした。時間をおいて再度お試しください。",
       );
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const handleMemoSave = async () => {
+    if (!article || isSavingMemo) return;
+
+    setIsSavingMemo(true);
+    setMemoMessage("");
+    setMemoError("");
+
+    try {
+      const updatedUserArticle = await updateArticleMemo(articleId, {
+        memo: memo.trim() === "" ? null : memo,
+      });
+
+      setArticle((currentArticle) => {
+        if (!currentArticle) return currentArticle;
+
+        const currentStatus = currentArticle.user_articles[0];
+
+        return {
+          ...currentArticle,
+          user_articles: [
+            {
+              ...updatedUserArticle,
+              is_favorite:
+                currentStatus?.is_favorite ??
+                updatedUserArticle.is_favorite,
+              is_read:
+                currentStatus?.is_read ?? updatedUserArticle.is_read,
+              is_read_later:
+                currentStatus?.is_read_later ??
+                updatedUserArticle.is_read_later,
+              read_at:
+                currentStatus !== undefined
+                  ? currentStatus.read_at
+                  : updatedUserArticle.read_at,
+              memo: updatedUserArticle.memo,
+            },
+          ],
+        };
+      });
+
+      setMemo(updatedUserArticle.memo ?? "");
+      setMemoMessage("メモを更新しました。");
+    } catch {
+      setMemoError(
+        "メモを更新できませんでした。時間をおいて再度お試しください。",
+      );
+    } finally {
+      setIsSavingMemo(false);
     }
   };
 
@@ -91,10 +179,10 @@ function ArticleDetailPage() {
             {errorMessage || "記事が見つかりませんでした。"}
           </div>
           <Link
-            to="/"
+            to={articleListUrl}
             className="mt-5 inline-flex rounded-md text-sm font-medium text-green-800 underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700/40"
           >
-            記事一覧へ戻る
+            ← 記事一覧へ戻る
           </Link>
         </div>
       </main>
@@ -110,7 +198,7 @@ function ArticleDetailPage() {
     <main className="flex-1 px-4 py-8 text-left sm:px-6 sm:py-10 lg:px-0">
       <div className="mx-auto max-w-4xl lg:mx-0">
         <Link
-          to="/"
+          to={articleListUrl}
           className="mb-5 inline-flex rounded-md text-sm font-medium text-gray-600 transition-colors hover:text-green-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700/40"
         >
           ← 記事一覧へ戻る
@@ -162,12 +250,12 @@ function ArticleDetailPage() {
           className="mt-5 rounded-lg border border-gray-200 bg-white px-5 py-4 shadow-sm sm:px-6 sm:py-5"
           aria-labelledby="status-heading"
         >
-          <h2 id="status-heading" className="text-base font-semibold text-gray-900">
-            この記事の状態
+          <h2
+            id="status-heading"
+            className="text-base font-semibold text-gray-900"
+          >
+            記事を整理
           </h2>
-          <p className="mt-1 text-sm text-gray-600">
-            読書状況や保存状態をここで変更できます。
-          </p>
 
           <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <StatusButton
@@ -197,7 +285,6 @@ function ArticleDetailPage() {
             />
           </div>
 
-        </section>
           {isUpdating && (
             <p className="mt-3 text-sm text-gray-600" role="status">
               状態を更新しています...
@@ -208,6 +295,57 @@ function ArticleDetailPage() {
               {updateError}
             </p>
           )}
+        </section>
+
+        <section
+          className="mt-5 rounded-lg border border-gray-200 bg-white px-5 py-4 shadow-sm sm:px-6 sm:py-5"
+          aria-labelledby="memo-heading"
+        >
+          <h2
+            id="memo-heading"
+            className="text-base font-semibold text-gray-900"
+          >
+            自分用メモ
+          </h2>
+
+          <p className="mt-1 text-sm text-gray-600">
+            この記事について覚えておきたいことを残せます。
+          </p>
+
+          <textarea
+            aria-labelledby="memo-heading"
+            value={memo}
+            onChange={(event) => setMemo(event.target.value)}
+            maxLength={5000}
+            rows={5}
+            disabled={isSavingMemo}
+            className="mt-4 w-full resize-y rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-green-700 focus:ring-2 focus:ring-green-700/20"
+            placeholder="メモを入力してください"
+          />
+
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => void handleMemoSave()}
+              disabled={isSavingMemo}
+              className="rounded-md bg-green-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700/40 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isSavingMemo ? "保存中..." : "メモを保存"}
+            </button>
+
+            {memoMessage && (
+              <p className="text-sm text-gray-600" aria-live="polite">
+                {memoMessage}
+              </p>
+            )}
+
+            {memoError && (
+              <p className="text-sm text-red-600" role="alert">
+                {memoError}
+              </p>
+            )}
+          </div>
+        </section>
       </div>
     </main>
   );

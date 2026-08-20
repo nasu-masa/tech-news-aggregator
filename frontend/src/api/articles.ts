@@ -13,6 +13,7 @@ type ArticleListResponse = {
 export type ArticleListParams = {
   source_id?: number;
   status?: ArticleStatusFilter;
+  page?: number;
 };
 
 export type UpdateArticleStatusData = {
@@ -43,6 +44,22 @@ export async function updateArticleStatus(
 ): Promise<UserArticle> {
   const response = await apiClient.patch<UserArticle>(
     `/api/articles/${id}/status`,
+    data,
+  );
+
+  return response.data;
+}
+
+export type UpdateArticleMemoData = {
+  memo: string | null;
+};
+
+export async function updateArticleMemo(
+  id: number,
+  data: UpdateArticleMemoData,
+): Promise<UserArticle> {
+  const response = await apiClient.patch<UserArticle>(
+    `/api/articles/${id}/memo`,
     data,
   );
 
