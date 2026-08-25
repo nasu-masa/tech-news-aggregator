@@ -20,6 +20,9 @@ class FeedImporter
                     $source->feed_url
                 );
 
+                usort($articles, fn ($a, $b) => strcmp($b['published_at'] ?? '', $a['published_at'] ?? ''));
+                $articles = array_slice($articles, 0, 30);
+
                 $this->articleSaver->save(
                     $source,
                     $articles,

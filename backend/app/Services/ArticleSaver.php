@@ -9,20 +9,22 @@ class ArticleSaver
 {
     public function save(Source $source, array $articles): void
     {
-        foreach ($articles as $article) {
-            $storedArticle = Article::firstOrNew([
-                'url' => $article['url'],
-            ]);
-
-            if (! $storedArticle->exists) {
-                $storedArticle->source_id = $source->id;
-            }
-
-            $storedArticle->title = $article['title'];
-            $storedArticle->summary = $article['summary'];
-            $storedArticle->published_at = $article['published_at'];
-
-            $storedArticle->save();
+        if (empty($articles)) {
+            return;
         }
+
+        $rows = array_map(fn (array $article): array => [
+            'source_id' => $source->id,
+            'url' => $article['url'],
+            'title' => $article['title'],
+            'summary' => $article['summary'],
+            'published_at' => $article['published_at'],
+        ], $articles);
+
+        Article::upsert(
+            $rows,
+            ['url'],
+            ['title', 'summary', 'published_at'],
+        );
     }
 }
