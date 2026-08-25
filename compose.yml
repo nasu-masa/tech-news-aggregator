@@ -67,6 +67,20 @@ services:
     volumes:
       - redis-data:/data
 
+  # Queue Worker
+  queue-worker:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    command: php artisan queue:work --sleep=3 --tries=3
+    volumes:
+      - ./backend:/var/www/html
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
   # 開発用メールサーバー
   mailhog:
     image: mailhog/mailhog
