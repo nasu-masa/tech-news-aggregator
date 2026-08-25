@@ -32,7 +32,7 @@ class FeedParser
             $articles[] = [
                 'title' => $title,
                 'url' => $url,
-                'summary' => $entry->getDescription(),
+                'summary' => $this->normalizeSummary($entry->getDescription()),
                 'published_at' => $publishedAt
                     ? $publishedAt
                         ->setTimezone(new DateTimeZone('UTC'))
@@ -42,5 +42,31 @@ class FeedParser
         }
 
         return $articles;
+    }
+
+    private function normalizeSummary(?string $description): ?string
+    {
+        if ($description === null) {
+            return null;
+        }
+
+        $summary = trim(strip_tags($description));
+
+        if ($summary === '') {
+            return null;
+        }
+
+        // hnrss.org uses the description for Hacker News metadata rather than
+        // an article summary. Do not expose that boilerplate as the summary.
+        if (
+            str_contains($summary, 'Article URL:')
+            && str_contains($summary, 'Comments URL:')
+            && preg_match('/\bPoints:\s*\d+\b/i', $summary) === 1
+            && preg_match('/#\s*Comments:\s*\d+\b/i', $summary) === 1
+        ) {
+            return null;
+        }
+
+        return $summary;
     }
 }

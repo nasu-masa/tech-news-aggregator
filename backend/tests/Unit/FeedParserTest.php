@@ -203,6 +203,55 @@ class FeedParserTest extends TestCase
         $this->assertNull($articles[0]['summary']);
     }
 
+    public function test_hacker_newsのメタ情報を概要として扱わない(): void
+    {
+        $xml = <<<'XML'
+        <?xml version="1.0" encoding="UTF-8" ?>
+        <rss version="2.0">
+            <channel>
+                <title>Hacker News</title>
+                <item>
+                    <title>Don't Wordle</title>
+                    <link>https://dontwordle.com/</link>
+                    <description><![CDATA[
+                        <p>Article URL: <a href="https://dontwordle.com/">https://dontwordle.com/</a></p>
+                        <p>Comments URL: <a href="https://news.ycombinator.com/item?id=49432319">https://news.ycombinator.com/item?id=49432319</a></p>
+                        <p>Points: 146</p>
+                        <p># Comments: 63</p>
+                    ]]></description>
+                    <pubDate>Tue, 25 Aug 2026 12:00:00 +0000</pubDate>
+                </item>
+            </channel>
+        </rss>
+        XML;
+
+        $articles = (new FeedParser)->parse($xml);
+
+        $this->assertCount(1, $articles);
+        $this->assertNull($articles[0]['summary']);
+    }
+
+    public function test_空のdescriptionはnullになる(): void
+    {
+        $xml = <<<'XML'
+        <rss version="2.0">
+            <channel>
+                <title>テストフィード</title>
+                <item>
+                    <title>空の概要の記事</title>
+                    <link>https://example.com/articles/1</link>
+                    <description>   </description>
+                </item>
+            </channel>
+        </rss>
+        XML;
+
+        $articles = (new FeedParser)->parse($xml);
+
+        $this->assertCount(1, $articles);
+        $this->assertNull($articles[0]['summary']);
+    }
+
     public function test_published_atがない記事はnullになる(): void
     {
         $xml = <<<'XML'
