@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { getSources } from "../../api/sources";
+import { SOURCES_UPDATED_EVENT } from "../../lib/sourceEvents";
 import {
   parseArticleStatusFilter,
   type ArticleStatusFilter,
@@ -27,6 +28,7 @@ function DesktopSidebar() {
   const [sources, setSources] = useState<Source[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [fetchKey, setFetchKey] = useState(0);
 
   const createFilterUrl = ({
     sourceId,
@@ -57,6 +59,12 @@ function DesktopSidebar() {
   };
 
   useEffect(() => {
+    const refetch = () => setFetchKey((k) => k + 1);
+    window.addEventListener(SOURCES_UPDATED_EVENT, refetch);
+    return () => window.removeEventListener(SOURCES_UPDATED_EVENT, refetch);
+  }, []);
+
+  useEffect(() => {
     let ignore = false;
 
     const fetchSources = async () => {
@@ -75,7 +83,7 @@ function DesktopSidebar() {
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [fetchKey]);
 
   return (
     <aside className="hidden w-56 shrink-0 py-10 lg:block">

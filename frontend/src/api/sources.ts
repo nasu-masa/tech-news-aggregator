@@ -6,3 +6,11 @@ export async function getSources(): Promise<Source[]> {
 
     return response.data;
 }
+
+export async function subscribeSource(sourceId: number): Promise<void> {
+    await apiClient.post(`/api/sources/${sourceId}/subscribe`);
+}
+
+export async function unsubscribeSource(sourceId: number): Promise<void> {
+    await apiClient.delete(`/api/sources/${sourceId}/subscribe`);
+}
