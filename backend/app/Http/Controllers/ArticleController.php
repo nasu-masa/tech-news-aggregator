@@ -68,6 +68,14 @@ class ArticleController extends Controller
                 });
             }
 
+            if ($status === 'read') {
+                $query->whereHas('userArticles', function ($query) use ($request) {
+                    $query
+                        ->where('user_id', $request->user()->id)
+                        ->where('is_read', true);
+                });
+            }
+
             if ($status === 'unread') {
                 $query->whereDoesntHave('userArticles', function ($query) use ($request) {
                     $query

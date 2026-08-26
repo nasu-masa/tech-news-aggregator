@@ -15,6 +15,7 @@ const statusFilters: {
 }[] = [
   { label: "すべて" },
   { label: "未読", value: "unread" },
+  { label: "既読", value: "read" },
   { label: "お気に入り", value: "favorite" },
   { label: "あとで見る", value: "read_later" },
 ];

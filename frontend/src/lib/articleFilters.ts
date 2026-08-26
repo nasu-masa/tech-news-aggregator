@@ -1,5 +1,6 @@
 export const articleStatusFilters = [
   "unread",
+  "read",
   "favorite",
   "read_later",
 ] as const;
