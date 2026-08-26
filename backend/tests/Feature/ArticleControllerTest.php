@@ -1337,6 +1337,7 @@ class ArticleControllerTest extends TestCase
         return [
             'お気に入り' => ['favorite', 'is_favorite'],
             'あとで見る' => ['read_later', 'is_read_later'],
+            '既読' => ['read', 'is_read'],
         ];
     }
 
@@ -1373,6 +1374,39 @@ class ArticleControllerTest extends TestCase
                 $unreadArticle->id,
             ],
             $response->json('data.*.id'),
+        );
+    }
+
+    public function test_既読状態で記事一覧を絞り込める(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        Article::factory()->create();
+        $unreadArticle = Article::factory()->create();
+        $readArticle = Article::factory()->create();
+
+        UserArticle::create([
+            'user_id' => $user->id,
+            'article_id' => $unreadArticle->id,
+            'is_read' => false,
+        ]);
+
+        UserArticle::create([
+            'user_id' => $user->id,
+            'article_id' => $readArticle->id,
+            'is_read' => true,
+        ]);
+
+        $response = $this->actingAs($user)
+            ->getJson('/api/articles?status=read')
+            ->assertOk()
+            ->assertJsonCount(1, 'data');
+
+        $this->assertEquals(
+            $readArticle->id,
+            $response->json('data.0.id'),
         );
     }
 
