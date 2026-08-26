@@ -70,7 +70,7 @@ class DevelopmentSeeder extends Seeder
             }
         );
 
-        $user->sources()->syncWithoutDetaching(
+        $user->sources()->sync(
             $sources->only(['backend', 'frontend', 'ai'])->pluck('id')->all()
         );
 
