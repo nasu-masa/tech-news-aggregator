@@ -89,6 +89,7 @@ class DevelopmentSeeder extends Seeder
                     [
                         'source_id' => $source->id,
                         'title' => "{$source->name} Article {$numberLabel}",
+                        'translated_title' => $this->articleTranslatedTitle($sourceKey, $number),
                         'summary' => $number % 2 === 0
                             ? "Fixed development summary for {$sourceKey} article {$numberLabel}."
                             : null,
@@ -148,6 +149,25 @@ class DevelopmentSeeder extends Seeder
                 'is_read_later' => true,
             ],
             6 => $this->combinedArticleState($sourceKey, $baseState),
+        };
+    }
+
+    private function articleTranslatedTitle(string $sourceKey, int $number): ?string
+    {
+        return match (true) {
+            $sourceKey === 'backend' && $number === 1 => 'RustによるWebサーバーのパフォーマンス最適化',
+            $sourceKey === 'backend' && $number === 3 => 'マイクロサービスアーキテクチャの最新トレンド',
+            $sourceKey === 'backend' && $number === 5 => 'GraphQL vs REST：2026年のAPI設計指南',
+            $sourceKey === 'frontend' && $number === 1 => 'React 20の新機能と移行ガイド',
+            $sourceKey === 'frontend' && $number === 3 => 'TypeScriptの型安全なフォームバリデーション',
+            $sourceKey === 'frontend' && $number === 5 => 'Webパフォーマンス計測の実践テクニック',
+            $sourceKey === 'ai' && $number === 1 => 'LLMを活用したコードレビューの自動化',
+            $sourceKey === 'ai' && $number === 3 => 'RAGアーキテクチャの設計パターン比較',
+            $sourceKey === 'ai' && $number === 5 => 'AIエージェントの信頼性を高める手法',
+            $sourceKey === 'infrastructure' && $number === 1 => 'Kubernetesクラスタのコスト最適化とOPA Gatekeeperの活用',
+            $sourceKey === 'infrastructure' && $number === 3 => 'GitOpsを用いたゼロダウンタイムデプロイ戦略',
+            $sourceKey === 'infrastructure' && $number === 5 => '可観測性プラットフォームの統合運用ガイド',
+            default => null,
         };
     }
 

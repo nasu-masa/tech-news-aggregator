@@ -216,8 +216,13 @@ function ArticleDetailPage() {
           </div>
 
           <h1 className="text-2xl font-semibold leading-tight tracking-tight text-gray-900 sm:text-3xl">
-            {article.title}
+            {article.translated_title ?? article.title}
           </h1>
+          {article.translated_title && (
+            <p className="mt-2 text-sm text-gray-500">
+              {article.title}
+            </p>
+          )}
 
           <section
             className="mt-5 border-t border-gray-100 pt-4"

@@ -15,6 +15,7 @@ export type Article = {
     id: number;
     source_id: number;
     title: string;
+    translated_title: string | null;
     summary: string | null;
     url: string;
     published_at: string | null;

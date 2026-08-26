@@ -208,9 +208,14 @@ function ArticleListPage() {
                       state={{ fromSearch: searchParams.toString() }}
                       className="rounded-sm transition-colors hover:text-green-800 hover:underline hover:underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700/40"
                     >
-                      {article.title}
+                      {article.translated_title ?? article.title}
                     </Link>
                   </h2>
+                  {article.translated_title && (
+                    <p className="mt-1 text-sm text-gray-500">
+                      {article.title}
+                    </p>
+                  )}
 
                   <div
                     className="mt-5 flex flex-wrap gap-2 border-t border-gray-100 pt-4"

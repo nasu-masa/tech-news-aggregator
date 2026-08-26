@@ -6,8 +6,10 @@ use App\Models\Source;
 use App\Services\ArticleSaver;
 use App\Services\FeedFetcher;
 use App\Services\FeedImporter;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Queue;
 use Mockery;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use Mockery\MockInterface;
@@ -53,7 +55,10 @@ class FeedImporterTest extends TestCase
         $articleSaver
             ->shouldReceive('save')
             ->once()
-            ->with(Mockery::type(Source::class), $articles);
+            ->with(Mockery::type(Source::class), $articles)
+            ->andReturn(new Collection);
+
+        Queue::fake();
 
         $importer = new FeedImporter(
             $feedFetcher,
@@ -131,7 +136,8 @@ class FeedImporterTest extends TestCase
         $articleSaver
             ->shouldReceive('save')
             ->once()
-            ->with($source, $articles);
+            ->with($source, $articles)
+            ->andReturn(new Collection);
 
         $source
             ->shouldReceive('update')
@@ -144,6 +150,8 @@ class FeedImporterTest extends TestCase
                     && $data['last_error_message'] === null
             ))
             ->andReturn(true);
+
+        Queue::fake();
 
         $feedImporter = new FeedImporter($feedFetcher, $articleSaver);
 
@@ -216,7 +224,10 @@ class FeedImporterTest extends TestCase
             $articleSaver
                 ->shouldReceive('save')
                 ->once()
-                ->with($targetSource, $articles);
+                ->with($targetSource, $articles)
+                ->andReturn(new Collection);
+
+            Queue::fake();
 
             $feedImporter = new FeedImporter($feedFetcher, $articleSaver);
 
@@ -245,7 +256,10 @@ class FeedImporterTest extends TestCase
 
         $articleSaver
             ->shouldReceive('save')
-            ->once();
+            ->once()
+            ->andReturn(new Collection);
+
+        Queue::fake();
 
         $feedImporter = new FeedImporter($feedFetcher, $articleSaver);
 
