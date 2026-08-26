@@ -95,7 +95,7 @@ function MobileArticleFilters() {
         </div>
       </nav>
 
-      {sources.length > 0 && (
+      {sources.filter((s) => s.is_subscribed).length > 0 && (
         <nav className="overflow-x-auto" aria-label="配信元で絞り込む">
           <div className="flex w-max gap-2 pb-1">
             <button
@@ -106,7 +106,7 @@ function MobileArticleFilters() {
             >
               すべての配信元
             </button>
-            {sources.map((source) => {
+            {sources.filter((s) => s.is_subscribed).map((source) => {
               const isActive = currentSourceId === source.id;
               return (
                 <button

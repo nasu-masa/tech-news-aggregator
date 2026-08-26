@@ -150,33 +150,28 @@ function DesktopSidebar() {
             </p>
           )}
 
-          {!isLoading && !errorMessage && sources.length === 0 && (
+          {!isLoading && !errorMessage && sources.filter((s) => s.is_subscribed).length === 0 && (
             <p className="px-3 py-2 text-sm text-gray-500">
               配信元がありません。
             </p>
           )}
 
-          {!isLoading && !errorMessage && sources.length > 0 && (
+          {!isLoading && !errorMessage && sources.filter((s) => s.is_subscribed).length > 0 && (
             <ul className="space-y-1">
-              {sources.map((source) => (
+              {sources.filter((s) => s.is_subscribed).map((source) => (
                 <li key={source.id}>
                   <Link
                     to={createFilterUrl({ sourceId: source.id })}
                     aria-current={
                       selectedSourceId === source.id ? "page" : undefined
                     }
-                    className={`flex items-start justify-between gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700/40 ${
+                    className={`block rounded-md px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700/40 ${
                       selectedSourceId === source.id
                         ? "bg-green-50 text-green-800"
                         : "text-gray-700 hover:bg-gray-50 hover:text-green-800"
                     }`}
                   >
                     <span className="min-w-0 break-words">{source.name}</span>
-                    {source.is_subscribed && (
-                      <span className="shrink-0 rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-800">
-                        追加済み
-                      </span>
-                    )}
                   </Link>
                 </li>
               ))}
