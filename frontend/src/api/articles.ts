@@ -13,6 +13,7 @@ type ArticleListResponse = {
 export type ArticleListParams = {
   source_id?: number;
   status?: ArticleStatusFilter;
+  keyword?: string;
   page?: number;
 };
 

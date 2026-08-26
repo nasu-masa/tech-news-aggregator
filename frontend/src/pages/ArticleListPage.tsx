@@ -11,10 +11,15 @@ import type { Article } from "../types/article";
 function ArticleListPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const sourceId = parsePositiveIntegerParam(searchParams.get("source_id"));
-
   const status = parseArticleStatusFilter(searchParams.get("status"));
-
+  const keyword = searchParams.get("keyword") ?? undefined;
   const page = parsePositiveIntegerParam(searchParams.get("page")) ?? 1;
+
+  const [inputValue, setInputValue] = useState(keyword ?? "");
+
+  useEffect(() => {
+    setInputValue(keyword ?? "");
+  }, [keyword]);
 
   const [articles, setArticles] = useState<Article[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -22,7 +27,7 @@ function ArticleListPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
 
-  const hasFilters = sourceId !== undefined || status !== undefined;
+  const hasFilters = sourceId !== undefined || status !== undefined || keyword !== undefined;
 
   useEffect(() => {
     let ignore = false;
@@ -36,6 +41,7 @@ function ArticleListPage() {
         const response = await getArticles({
           source_id: sourceId,
           status,
+          keyword,
           page,
         });
         if (!ignore) {
@@ -81,7 +87,20 @@ function ArticleListPage() {
     return () => {
       ignore = true;
     };
-  }, [sourceId, status, page, setSearchParams]);
+  }, [sourceId, status, keyword, page, setSearchParams]);
+
+  const handleSearch = (e: React.SyntheticEvent) => {
+    e.preventDefault();
+    const next = new URLSearchParams(searchParams);
+    const trimmed = inputValue.trim();
+    if (trimmed) {
+      next.set("keyword", trimmed);
+    } else {
+      next.delete("keyword");
+    }
+    next.delete("page");
+    setSearchParams(next);
+  };
 
   const handlePageChange = (nextPage: number) => {
     const nextSearchParams = new URLSearchParams(searchParams);
@@ -107,6 +126,25 @@ function ArticleListPage() {
             気になる技術ニュースを選び、詳細や保存状態を確認できます。
           </p>
         </div>
+
+        <form onSubmit={handleSearch} className="mb-6">
+          <div className="flex gap-2">
+            <input
+              type="search"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder="キーワードで検索..."
+              aria-label="記事をキーワードで検索"
+              className="min-w-0 flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 transition-colors focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-700/30"
+            />
+            <button
+              type="submit"
+              className="shrink-0 rounded-md bg-green-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700/40"
+            >
+              検索
+            </button>
+          </div>
+        </form>
 
         <MobileArticleFilters />
 
