@@ -55,6 +55,11 @@ class SourceSeeder extends Seeder
                 'feed_url' => 'https://hnrss.org/frontpage',
                 'site_url' => 'https://news.ycombinator.com',
             ],
+            [
+                'name' => 'Tailwind CSS Blog',
+                'feed_url' => 'https://tailwindcss.com/feeds/feed.xml',
+                'site_url' => 'https://tailwindcss.com/blog',
+            ],
         ];
 
         foreach ($sources as $source) {
