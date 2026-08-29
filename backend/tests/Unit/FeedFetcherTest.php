@@ -225,6 +225,54 @@ class FeedFetcherTest extends TestCase
         }
     }
 
+    // -------------------------------------------------------------------------
+    // fetchXml()
+    // -------------------------------------------------------------------------
+
+    public function test_fetch_xmlはraw_xmlを返す(): void
+    {
+        $xml = <<<'XML'
+        <rss version="2.0"><channel><title>テスト</title></channel></rss>
+        XML;
+
+        Http::fake([
+            'https://example.com/feed.xml' => Http::response($xml, 200),
+        ]);
+
+        $fetcher = new FeedFetcher(new FeedParser, $this->publicIpResolver());
+
+        $result = $fetcher->fetchXml('https://example.com/feed.xml');
+
+        $this->assertIsString($result);
+        $this->assertStringContainsString('<rss', $result);
+    }
+
+    public function test_fetchを経由してもfetch_xmlと同じ結果になる(): void
+    {
+        $xml = <<<'XML'
+        <rss version="2.0">
+            <channel>
+                <title>テストフィード</title>
+                <item>
+                    <title>記事</title>
+                    <link>https://example.com/articles/1</link>
+                </item>
+            </channel>
+        </rss>
+        XML;
+
+        Http::fake([
+            'https://example.com/feed.xml' => Http::response($xml, 200),
+        ]);
+
+        $fetcher = new FeedFetcher(new FeedParser, $this->publicIpResolver());
+
+        $articles = $fetcher->fetch('https://example.com/feed.xml');
+
+        $this->assertCount(1, $articles);
+        $this->assertSame('記事', $articles[0]['title']);
+    }
+
     public function test_リダイレクトを追わない(): void
     {
         Http::fake([

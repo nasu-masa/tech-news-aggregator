@@ -11,7 +11,7 @@ class FeedFetcher
         private readonly DnsResolver $dnsResolver,
     ) {}
 
-    public function fetch(string $url): array
+    public function fetchXml(string $url): string
     {
         $scheme = parse_url($url, PHP_URL_SCHEME);
         $host = parse_url($url, PHP_URL_HOST);
@@ -42,7 +42,7 @@ class FeedFetcher
             ? "{$host}:443:[{$pinnedIp}]"
             : "{$host}:443:{$pinnedIp}";
 
-        $xml = Http::timeout(10)
+        return Http::timeout(10)
             ->retry(2, 500)
             ->withOptions([
                 'allow_redirects' => false,
@@ -53,8 +53,11 @@ class FeedFetcher
             ->get($url)
             ->throw()
             ->body();
+    }
 
-        return $this->feedParser->parse($xml);
+    public function fetch(string $url): array
+    {
+        return $this->feedParser->parse($this->fetchXml($url));
     }
 
     private function resolveHost(string $host): array

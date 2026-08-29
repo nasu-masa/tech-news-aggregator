@@ -16,6 +16,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::patch('/articles/{article}/memo', [ArticleController::class, 'updateMemo']);
 
     Route::get('/sources', [SourceController::class, 'index']);
+    Route::post('/sources', [SourceController::class, 'store']);
     Route::post('/sources/{source}/subscribe', [SourceController::class, 'subscribe']);
     Route::delete('/sources/{source}/subscribe', [SourceController::class, 'unsubscribe']);
 });
