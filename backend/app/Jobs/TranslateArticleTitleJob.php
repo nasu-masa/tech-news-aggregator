@@ -23,8 +23,17 @@ class TranslateArticleTitleJob implements ShouldQueue
             return;
         }
 
+        if ($this->isJapanese($this->article->title)) {
+            return;
+        }
+
         $translated = $translator->translate($this->article->title);
 
         $this->article->update(['translated_title' => $translated]);
+    }
+
+    private function isJapanese(string $text): bool
+    {
+        return (bool) preg_match('/[\p{Hiragana}\p{Katakana}]/u', $text);
     }
 }
