@@ -7,6 +7,14 @@ use Laminas\Feed\Reader\Reader;
 
 class FeedParser
 {
+    public function parseFeedTitle(string $xml): ?string
+    {
+        $feed = Reader::importString($xml);
+        $title = trim((string) $feed->getTitle());
+
+        return $title !== '' ? $title : null;
+    }
+
     public function parse(string $xml): array
     {
         $feed = Reader::importString($xml);

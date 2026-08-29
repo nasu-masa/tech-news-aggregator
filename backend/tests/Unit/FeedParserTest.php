@@ -8,6 +8,92 @@ use Tests\TestCase;
 
 class FeedParserTest extends TestCase
 {
+    public function test_rss20でフィードタイトルを取得できる(): void
+    {
+        $xml = <<<'XML'
+        <?xml version="1.0" encoding="UTF-8" ?>
+        <rss version="2.0">
+            <channel>
+                <title>テストフィード</title>
+                <item>
+                    <title>テスト記事</title>
+                    <link>https://example.com/articles/1</link>
+                </item>
+            </channel>
+        </rss>
+        XML;
+
+        $title = (new FeedParser)->parseFeedTitle($xml);
+
+        $this->assertSame('テストフィード', $title);
+    }
+
+    public function test_atomでフィードタイトルを取得できる(): void
+    {
+        $xml = <<<'XML'
+        <?xml version="1.0" encoding="UTF-8"?>
+        <feed xmlns="http://www.w3.org/2005/Atom">
+            <title>テストAtomフィード</title>
+            <entry>
+                <title>Atomテスト記事</title>
+                <link href="https://example.com/articles/1" />
+            </entry>
+        </feed>
+        XML;
+
+        $title = (new FeedParser)->parseFeedTitle($xml);
+
+        $this->assertSame('テストAtomフィード', $title);
+    }
+
+    public function test_フィードタイトルがない場合はnullになる(): void
+    {
+        $xml = <<<'XML'
+        <?xml version="1.0" encoding="UTF-8" ?>
+        <rss version="2.0">
+            <channel>
+                <item>
+                    <title>テスト記事</title>
+                    <link>https://example.com/articles/1</link>
+                </item>
+            </channel>
+        </rss>
+        XML;
+
+        $title = (new FeedParser)->parseFeedTitle($xml);
+
+        $this->assertNull($title);
+    }
+
+    public function test_フィードタイトルが空白のみの場合はnullになる(): void
+    {
+        $xml = <<<'XML'
+        <?xml version="1.0" encoding="UTF-8" ?>
+        <rss version="2.0">
+            <channel>
+                <title>   </title>
+                <item>
+                    <title>テスト記事</title>
+                    <link>https://example.com/articles/1</link>
+                </item>
+            </channel>
+        </rss>
+        XML;
+
+        $title = (new FeedParser)->parseFeedTitle($xml);
+
+        $this->assertNull($title);
+    }
+
+    public function test_不正なxmlではparse_feed_titleでも例外が発生する(): void
+    {
+        $xml = '<rss><channel><item></rss>';
+
+        $this->expectException(RuntimeException::class);
+
+        (new FeedParser)->parseFeedTitle($xml);
+    }
+
     public function test_rssを解析できる(): void
     {
         $xml = <<<'XML'
