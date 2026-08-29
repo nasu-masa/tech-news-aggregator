@@ -42,4 +42,9 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsToMany(Source::class, 'user_sources')
             ->withTimestamps();
     }
+
+    public function customSources(): HasMany
+    {
+        return $this->hasMany(Source::class, 'created_by_user_id');
+    }
 }

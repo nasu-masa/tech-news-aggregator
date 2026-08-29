@@ -11,6 +11,10 @@ class SourceController extends Controller
     {
         return Source::query()
             ->where('is_active', true)
+            ->where(function ($query) use ($request) {
+                $query->whereNull('created_by_user_id')
+                    ->orWhere('created_by_user_id', $request->user()->id);
+            })
             ->withExists([
                 'users as is_subscribed' => function ($query) use ($request) {
                     $query->where('users.id', $request->user()->id);

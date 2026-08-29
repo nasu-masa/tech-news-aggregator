@@ -11,6 +11,143 @@ class SourceControllerTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_共通sourceは全ユーザーに返る(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($user);
+
+        Source::factory()->create([
+            'name' => '共通Source',
+            'created_by_user_id' => null,
+            'is_active' => true,
+        ]);
+
+        $response = $this->getJson('/api/sources');
+
+        $response
+            ->assertOk()
+            ->assertJsonCount(1)
+            ->assertJsonPath('0.name', '共通Source');
+    }
+
+    public function test_自分が作成したsourceは取得できる(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($user);
+
+        Source::factory()->create([
+            'name' => '自分のSource',
+            'created_by_user_id' => $user->id,
+            'is_active' => true,
+        ]);
+
+        $response = $this->getJson('/api/sources');
+
+        $response
+            ->assertOk()
+            ->assertJsonCount(1)
+            ->assertJsonPath('0.name', '自分のSource');
+    }
+
+    public function test_他ユーザーが作成したsourceは取得できない(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+        $otherUser = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($user);
+
+        Source::factory()->create([
+            'name' => '他ユーザーのSource',
+            'created_by_user_id' => $otherUser->id,
+            'is_active' => true,
+        ]);
+
+        $response = $this->getJson('/api/sources');
+
+        $response
+            ->assertOk()
+            ->assertJsonCount(0);
+    }
+
+    public function test_共通sourceと自分のsourceだけ返り他ユーザーのsourceは除外される(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+        $otherUser = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($user);
+
+        Source::factory()->create([
+            'name' => '共通Source',
+            'created_by_user_id' => null,
+            'is_active' => true,
+        ]);
+
+        Source::factory()->create([
+            'name' => '自分のSource',
+            'created_by_user_id' => $user->id,
+            'is_active' => true,
+        ]);
+
+        Source::factory()->create([
+            'name' => '他ユーザーのSource',
+            'created_by_user_id' => $otherUser->id,
+            'is_active' => true,
+        ]);
+
+        $response = $this->getJson('/api/sources');
+
+        $response
+            ->assertOk()
+            ->assertJsonCount(2)
+            ->assertJsonFragment(['name' => '共通Source'])
+            ->assertJsonFragment(['name' => '自分のSource'])
+            ->assertJsonMissing(['name' => '他ユーザーのSource']);
+    }
+
+    public function test_自分のsourceにもis_subscribedが正しく返る(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($user);
+
+        $subscribedSource = Source::factory()->create([
+            'created_by_user_id' => $user->id,
+            'is_active' => true,
+        ]);
+
+        Source::factory()->create([
+            'created_by_user_id' => $user->id,
+            'is_active' => true,
+        ]);
+
+        $user->sources()->attach($subscribedSource->id);
+
+        $response = $this->getJson('/api/sources');
+
+        $response
+            ->assertOk()
+            ->assertJsonFragment([
+                'id' => $subscribedSource->id,
+                'is_subscribed' => true,
+            ]);
+    }
+
     public function test_source一覧で購読状態を確認できる(): void
     {
         $user = User::factory()->create([

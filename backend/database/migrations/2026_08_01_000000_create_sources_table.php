@@ -13,6 +13,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('feed_url', 2048)->unique();
             $table->string('site_url', 2048);
+            $table->foreignId('created_by_user_id')->nullable()->constrained('users')->cascadeOnDelete();
             $table->boolean('is_active')->default(true);
             $table->timestampTz('last_success_at')->nullable();
             $table->timestampTz('last_error_at')->nullable();

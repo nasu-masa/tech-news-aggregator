@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -12,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'name',
     'feed_url',
     'site_url',
+    'created_by_user_id',
     'is_active',
     'last_success_at',
     'last_error_at',
@@ -31,5 +33,10 @@ class Source extends Model
     {
         return $this->belongsToMany(User::class, 'user_sources')
             ->withTimestamps();
+    }
+
+    public function createdByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by_user_id');
     }
 }
