@@ -1,5 +1,6 @@
+import axios from "axios";
 import { useEffect, useRef, useState } from "react";
-import { getSources, subscribeSource, unsubscribeSource } from "../../api/sources";
+import { getSources, registerSource, subscribeSource, unsubscribeSource } from "../../api/sources";
 import { SOURCES_UPDATED_EVENT } from "../../lib/sourceEvents";
 import type { Source } from "../../types/source";
 
@@ -14,6 +15,9 @@ function SourceManageModal({ isOpen, onClose }: Props) {
     const [loadError, setLoadError] = useState("");
     const [actionError, setActionError] = useState("");
     const [pendingIds, setPendingIds] = useState<Set<number>>(new Set());
+    const [feedUrl, setFeedUrl] = useState("");
+    const [isRegistering, setIsRegistering] = useState(false);
+    const [registerError, setRegisterError] = useState("");
     const backdropRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -23,6 +27,8 @@ function SourceManageModal({ isOpen, onClose }: Props) {
         setIsLoading(true);
         setLoadError("");
         setActionError("");
+        setFeedUrl("");
+        setRegisterError("");
 
         getSources()
             .then((data) => {
@@ -51,6 +57,29 @@ function SourceManageModal({ isOpen, onClose }: Props) {
         document.addEventListener("keydown", handleKeyDown);
         return () => document.removeEventListener("keydown", handleKeyDown);
     }, [isOpen, onClose]);
+
+    const handleRegister = async () => {
+        if (!feedUrl.trim() || isRegistering) return;
+        setRegisterError("");
+        setIsRegistering(true);
+        try {
+            await registerSource(feedUrl.trim());
+            setFeedUrl("");
+            const data = await getSources();
+            setSources(data);
+            window.dispatchEvent(new CustomEvent(SOURCES_UPDATED_EVENT));
+        } catch (err) {
+            if (axios.isAxiosError(err) && err.response?.status === 422) {
+                const msgs = (err.response.data as { errors?: { feed_url?: string[] } })?.errors
+                    ?.feed_url;
+                setRegisterError(msgs?.[0] ?? "登録に失敗しました。");
+            } else {
+                setRegisterError("登録に失敗しました。もう一度お試しください。");
+            }
+        } finally {
+            setIsRegistering(false);
+        }
+    };
 
     const handleToggle = async (source: Source) => {
         if (pendingIds.has(source.id)) return;
@@ -118,6 +147,35 @@ function SourceManageModal({ isOpen, onClose }: Props) {
                             />
                         </svg>
                     </button>
+                </div>
+
+                <div className="border-b border-gray-200 px-5 py-4">
+                    <div className="flex gap-2">
+                        <input
+                            type="url"
+                            value={feedUrl}
+                            onChange={(e) => setFeedUrl(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") void handleRegister();
+                            }}
+                            placeholder="https://example.com/feed.xml"
+                            disabled={isRegistering}
+                            className="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm placeholder-gray-400 focus:border-green-700 focus:outline-none focus:ring-1 focus:ring-green-700/40 disabled:bg-gray-50 disabled:text-gray-400"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => void handleRegister()}
+                            disabled={isRegistering || !feedUrl.trim()}
+                            className="shrink-0 rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700/40 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            {isRegistering ? "登録中..." : "追加"}
+                        </button>
+                    </div>
+                    {registerError && (
+                        <p className="mt-1.5 text-xs text-red-700" role="alert">
+                            {registerError}
+                        </p>
+                    )}
                 </div>
 
                 <div className="min-h-0 flex-1 overflow-y-auto p-5">

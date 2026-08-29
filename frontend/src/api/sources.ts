@@ -7,6 +7,12 @@ export async function getSources(): Promise<Source[]> {
     return response.data;
 }
 
+export async function registerSource(feedUrl: string): Promise<Source> {
+    const response = await apiClient.post<Source>("/api/sources", { feed_url: feedUrl });
+
+    return response.data;
+}
+
 export async function subscribeSource(sourceId: number): Promise<void> {
     await apiClient.post(`/api/sources/${sourceId}/subscribe`);
 }
