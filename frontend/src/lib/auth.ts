@@ -42,3 +42,26 @@ export const logout = async (): Promise<void> => {
 export const resendVerificationEmail = async (): Promise<void> => {
   await apiClient.post("/email/verification-notification");
 };
+
+export type ForgotPasswordInput = {
+  email: string;
+};
+
+export const forgotPassword = async (
+  input: ForgotPasswordInput
+): Promise<void> => {
+  await apiClient.post("/forgot-password", input);
+};
+
+export type ResetPasswordInput = {
+  token: string;
+  email: string;
+  password: string;
+  password_confirmation: string;
+};
+
+export const resetPassword = async (
+  input: ResetPasswordInput,
+): Promise<void> => {
+  await apiClient.post("/reset-password", input);
+};
