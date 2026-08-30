@@ -2,10 +2,16 @@
 
 namespace App\Services;
 
+use GuzzleHttp\Psr7\Uri;
+use GuzzleHttp\Psr7\UriResolver;
 use Illuminate\Support\Facades\Http;
 
 class FeedFetcher
 {
+    private const MAX_REDIRECTS = 5;
+
+    private const MAX_BODY_BYTES = 10 * 1024 * 1024; // 10 MB
+
     public function __construct(
         private readonly FeedParser $feedParser,
         private readonly DnsResolver $dnsResolver,
@@ -13,8 +19,96 @@ class FeedFetcher
 
     public function fetchXml(string $url): string
     {
+        $seen = [];
+
+        for ($redirect = 0; ; $redirect++) {
+            [$url, $resolveDirective] = $this->validateAndPin($url);
+
+            if (isset($seen[$url])) {
+                throw new \InvalidArgumentException('リダイレクトループを検出しました。');
+            }
+            $seen[$url] = true;
+
+            $response = Http::timeout(10)
+                ->retry(2, 500)
+                ->withOptions([
+                    'allow_redirects' => false,
+                    'connect_timeout' => 5,
+                    'stream' => true,
+                    'curl' => [
+                        CURLOPT_RESOLVE => [$resolveDirective],
+                        CURLOPT_MAXFILESIZE => self::MAX_BODY_BYTES,
+                    ],
+                ])
+                ->get($url);
+
+            if ($response->redirect()) {
+                $response->toPsrResponse()->getBody()->close();
+
+                if ($redirect >= self::MAX_REDIRECTS) {
+                    throw new \InvalidArgumentException('リダイレクトの上限に達しました。');
+                }
+
+                $location = $response->header('Location');
+
+                if (! $location) {
+                    throw new \InvalidArgumentException('リダイレクト先URLがありません。');
+                }
+
+                $url = (string) UriResolver::resolve(
+                    new Uri($url),
+                    new Uri($location),
+                );
+
+                continue;
+            }
+
+            $response->throw();
+
+            $stream = $response->toPsrResponse()->getBody();
+            $body = '';
+
+            while (! $stream->eof()) {
+                $body .= $stream->read(65536);
+
+                if (strlen($body) > self::MAX_BODY_BYTES) {
+                    $stream->close();
+                    throw new \InvalidArgumentException('レスポンスが大きすぎます。');
+                }
+            }
+
+            return $body;
+        }
+    }
+
+    public function fetch(string $url): array
+    {
+        return $this->feedParser->parse($this->fetchXml($url));
+    }
+
+    private function isIpv6LinkLocal(string $ip): bool
+    {
+        $binary = inet_pton($ip);
+
+        if ($binary === false || strlen($binary) !== 16 ) {
+            return false;
+        }
+
+        $firstByte = ord($binary[0]);
+        $secondByte = ord($binary[1]);
+
+        if ($firstByte === 0xfe && ($secondByte & 0xc0) === 0x80) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private function validateAndPin(string $url): array
+    {
         $scheme = parse_url($url, PHP_URL_SCHEME);
         $host = parse_url($url, PHP_URL_HOST);
+        $port = parse_url($url, PHP_URL_PORT) ?? 443;
 
         if (
             filter_var($url, FILTER_VALIDATE_URL) === false
@@ -30,7 +124,14 @@ class FeedFetcher
         $ips = $this->resolveHost($host);
 
         foreach ($ips as $ip) {
-            if (! filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+            if (
+                ! filter_var(
+                    $ip,
+                    FILTER_VALIDATE_IP,
+                    FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+                    )
+                    || $this->isIpv6LinkLocal($ip)
+            ) {
                 throw new \InvalidArgumentException(
                     'このURLには接続できません。'
                 );
@@ -39,25 +140,10 @@ class FeedFetcher
 
         $pinnedIp = $ips[0];
         $resolveDirective = filter_var($pinnedIp, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)
-            ? "{$host}:443:[{$pinnedIp}]"
-            : "{$host}:443:{$pinnedIp}";
+            ? "{$host}:{$port}:[{$pinnedIp}]"
+            : "{$host}:{$port}:{$pinnedIp}";
 
-        return Http::timeout(10)
-            ->retry(2, 500)
-            ->withOptions([
-                'allow_redirects' => false,
-                'curl' => [
-                    CURLOPT_RESOLVE => [$resolveDirective],
-                ],
-            ])
-            ->get($url)
-            ->throw()
-            ->body();
-    }
-
-    public function fetch(string $url): array
-    {
-        return $this->feedParser->parse($this->fetchXml($url));
+        return [$url, $resolveDirective];
     }
 
     private function resolveHost(string $host): array
