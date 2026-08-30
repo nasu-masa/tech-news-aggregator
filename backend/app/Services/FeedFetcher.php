@@ -90,14 +90,14 @@ class FeedFetcher
     {
         $binary = inet_pton($ip);
 
-        if ($binary === false || strlen($binary) !== 16 ) {
+        if ($binary === false || strlen($binary) !== 16) {
             return false;
         }
 
         $firstByte = ord($binary[0]);
         $secondByte = ord($binary[1]);
 
-        if ($firstByte === 0xfe && ($secondByte & 0xc0) === 0x80) {
+        if ($firstByte === 0xFE && ($secondByte & 0xC0) === 0x80) {
             return true;
         }
 
@@ -129,7 +129,7 @@ class FeedFetcher
                     $ip,
                     FILTER_VALIDATE_IP,
                     FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
-                    )
+                )
                     || $this->isIpv6LinkLocal($ip)
             ) {
                 throw new \InvalidArgumentException(

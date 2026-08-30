@@ -703,5 +703,4 @@ class FeedFetcherTest extends TestCase
 
         $fetcher->fetchXml('https://example.com/feed.xml');
     }
-
 }
