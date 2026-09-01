@@ -67,7 +67,7 @@ class UserControllerTest extends TestCase
         $response->assertUnauthorized();
     }
 
-    public function test_退会後も他ユーザー購読中のSourceとArticleが残りcreated_by_user_idがNULLになる(): void
+    public function test_退会後も他ユーザー購読中の_sourceと_articleが残りcreated_by_user_idが_nul_lになる(): void
     {
         $creator = User::factory()->create(['password' => bcrypt('password123')]);
         $subscriber = User::factory()->create();
@@ -83,7 +83,7 @@ class UserControllerTest extends TestCase
         $this->assertDatabaseHas('user_sources', ['user_id' => $subscriber->id, 'source_id' => $source->id]);
     }
 
-    public function test_退会後に購読者がいないSourceもNULLになり残る(): void
+    public function test_退会後に購読者がいない_sourceも_nul_lになり残る(): void
     {
         $creator = User::factory()->create(['password' => bcrypt('password123')]);
         $source = Source::factory()->create(['created_by_user_id' => $creator->id]);
