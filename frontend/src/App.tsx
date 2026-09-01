@@ -4,6 +4,7 @@ import AppLayout from "./components/layout/AppLayout";
 import ArticleLayout from "./components/layout/ArticleLayout";
 import ArticleDetailPage from "./pages/ArticleDetailPage.tsx";
 import ArticleListPage from "./pages/ArticleListPage";
+import ContactPage from "./pages/ContactPage";
 import DeleteAccountPage from "./pages/DeleteAccountPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import LoginPage from "./pages/LoginPage";
@@ -21,6 +22,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/contact" element={<ContactPage />} />
         <Route
           path="/verify-email"
           element={
