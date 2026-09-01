@@ -4,10 +4,12 @@ import AppLayout from "./components/layout/AppLayout";
 import ArticleLayout from "./components/layout/ArticleLayout";
 import ArticleDetailPage from "./pages/ArticleDetailPage.tsx";
 import ArticleListPage from "./pages/ArticleListPage";
+import DeleteAccountPage from "./pages/DeleteAccountPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import SettingsPage from "./pages/SettingsPage";
 import VerifyEmailPage from "./pages/VerifyEmailPage.tsx";
 import { Route, Routes } from "react-router-dom";
 
@@ -24,6 +26,22 @@ function App() {
           element={
             <ProtectedRoute>
               <VerifyEmailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <SettingsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings/delete-account"
+          element={
+            <ProtectedRoute>
+              <DeleteAccountPage />
             </ProtectedRoute>
           }
         />

@@ -65,3 +65,26 @@ export const resetPassword = async (
 ): Promise<void> => {
   await apiClient.post("/reset-password", input);
 };
+
+export type UpdateProfileInput = {
+  name: string;
+  email: string;
+};
+
+export const updateProfile = async (input: UpdateProfileInput): Promise<void> => {
+  await apiClient.put("/user/profile-information", input);
+};
+
+export type UpdatePasswordInput = {
+  current_password: string;
+  password: string;
+  password_confirmation: string;
+};
+
+export const updatePassword = async (input: UpdatePasswordInput): Promise<void> => {
+  await apiClient.put("/user/password", input);
+};
+
+export const deleteAccount = async (password: string): Promise<void> => {
+  await apiClient.delete("/api/user", { data: { password } });
+};
