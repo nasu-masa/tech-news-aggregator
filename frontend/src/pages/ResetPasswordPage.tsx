@@ -5,7 +5,7 @@ import { resetPassword, type ResetPasswordInput } from "../lib/auth";
 import setValidationErrors from "../lib/formValidation";
 
 const inputClass =
-  "block w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-base text-gray-900 placeholder:text-gray-400 transition-colors focus:border-green-700 focus:outline-none focus:ring-2 focus:ring-green-700/20 aria-[invalid=true]:border-red-400 aria-[invalid=true]:focus:ring-red-400/20";
+  "block w-full rounded-md border border-stone-300 bg-white px-3 py-2.5 text-base text-stone-900 placeholder:text-stone-400 transition-colors focus:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-700/20 aria-[invalid=true]:border-red-400 aria-[invalid=true]:focus:ring-red-400/20";
 
 function ResetPasswordPage() {
   const [errorMessage, setErrorMessage] = useState("");
@@ -52,14 +52,14 @@ function ResetPasswordPage() {
 
   return (
     <div className="flex flex-1 items-center justify-center bg-stone-50 px-4 py-12 text-left">
-      <div className="w-full max-w-sm rounded-lg border border-gray-200 bg-white p-10 shadow-sm">
-        <h1 className="mb-7 text-xl font-semibold tracking-tight text-gray-900">
+      <div className="w-full max-w-sm rounded-lg border border-stone-200 bg-white p-10 shadow-sm">
+        <h1 className="mb-7 text-xl font-semibold tracking-tight text-stone-900">
           パスワードのリセット
         </h1>
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <div className="mb-5">
             <label
-              className="mb-1.5 block text-sm font-medium text-gray-700"
+              className="mb-1.5 block text-sm font-medium text-stone-700"
               htmlFor="password"
             >
               新しいパスワード
@@ -91,7 +91,7 @@ function ResetPasswordPage() {
 
           <div className="mb-5">
             <label
-              className="mb-1.5 block text-sm font-medium text-gray-700"
+              className="mb-1.5 block text-sm font-medium text-stone-700"
               htmlFor="password_confirmation"
             >
               パスワード確認
@@ -125,7 +125,7 @@ function ResetPasswordPage() {
           </div>
 
           <button
-            className="mt-2 block w-full rounded-md bg-green-700 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-green-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700/40 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-2 block w-full rounded-md bg-emerald-700 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700/40 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-60"
             type="submit"
             disabled={isSubmitting}
           >

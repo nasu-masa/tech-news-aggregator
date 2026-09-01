@@ -90,9 +90,9 @@ function DesktopSidebar() {
     <aside className="hidden w-56 shrink-0 py-10 lg:block">
       <nav
         aria-label="記事ナビゲーション"
-        className="max-h-[calc(100vh-8rem)] overflow-y-auto rounded-lg border border-gray-200 bg-white p-3"
+        className="max-h-[calc(100vh-8rem)] overflow-y-auto rounded-lg border border-stone-200 bg-white p-3"
       >
-        <p className="mb-2 px-3 text-xs font-semibold tracking-wide text-gray-500">
+        <p className="mb-2 px-3 text-xs font-semibold tracking-wide text-stone-500">
           記事メニュー
         </p>
         <Link
@@ -102,10 +102,10 @@ function DesktopSidebar() {
               ? "page"
               : undefined
           }
-          className={`block rounded-md px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700/40 ${
+          className={`block rounded-md px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700/40 ${
             selectedSourceId === undefined && status === undefined
-              ? "bg-green-50 text-green-800"
-              : "text-gray-700 hover:bg-gray-50 hover:text-green-800"
+              ? "bg-emerald-50 text-emerald-800"
+              : "text-stone-700 hover:bg-stone-50 hover:text-emerald-800"
           }`}
         >
           すべての記事
@@ -119,10 +119,10 @@ function DesktopSidebar() {
               key={filter.value}
               to={createFilterUrl({ status: filter.value })}
               aria-current={isActive ? "page" : undefined}
-              className={`block rounded-md px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700/40 ${
+              className={`block rounded-md px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700/40 ${
                 isActive
-                  ? "bg-green-50 text-green-800"
-                  : "text-gray-700 hover:bg-gray-50 hover:text-green-800"
+                  ? "bg-emerald-50 text-emerald-800"
+                  : "text-stone-700 hover:bg-stone-50 hover:text-emerald-800"
               }`}
             >
               {filter.label}
@@ -130,13 +130,13 @@ function DesktopSidebar() {
           );
         })}
 
-        <section className="mt-4 border-t border-gray-100 pt-4">
-          <h2 className="mb-2 px-3 text-xs font-semibold tracking-wide text-gray-500">
+        <section className="mt-4 border-t border-stone-100 pt-4">
+          <h2 className="mb-2 px-3 text-xs font-semibold tracking-wide text-stone-500">
             配信元
           </h2>
 
           {isLoading && (
-            <p className="px-3 py-2 text-sm text-gray-500" role="status">
+            <p className="px-3 py-2 text-sm text-stone-500" role="status">
               読み込み中...
             </p>
           )}
@@ -151,7 +151,7 @@ function DesktopSidebar() {
           )}
 
           {!isLoading && !errorMessage && sources.filter((s) => s.is_subscribed).length === 0 && (
-            <p className="px-3 py-2 text-sm text-gray-500">
+            <p className="px-3 py-2 text-sm text-stone-500">
               配信元がありません。
             </p>
           )}
@@ -165,10 +165,10 @@ function DesktopSidebar() {
                     aria-current={
                       selectedSourceId === source.id ? "page" : undefined
                     }
-                    className={`block rounded-md px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700/40 ${
+                    className={`block rounded-md px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700/40 ${
                       selectedSourceId === source.id
-                        ? "bg-green-50 text-green-800"
-                        : "text-gray-700 hover:bg-gray-50 hover:text-green-800"
+                        ? "bg-emerald-50 text-emerald-800"
+                        : "text-stone-700 hover:bg-stone-50 hover:text-emerald-800"
                     }`}
                   >
                     <span className="min-w-0 break-words">{source.name}</span>

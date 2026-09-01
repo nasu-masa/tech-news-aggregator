@@ -13,8 +13,8 @@ export function StatusBadge({
     <span
       className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium ${
         active
-          ? "border-green-200 bg-green-50 text-green-800"
-          : "border-gray-200 bg-gray-50 text-gray-600"
+          ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+          : "border-stone-200 bg-stone-50 text-stone-600"
       }`}
     >
       {active ? activeLabel : inactiveLabel}
@@ -40,10 +40,10 @@ export function StatusButton({
       aria-pressed={active}
       onClick={onClick}
       disabled={disabled}
-      className={`rounded-md border px-3.5 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700/40 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-60 ${
+      className={`rounded-md border px-3.5 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700/40 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-60 ${
         active
-          ? "border-green-700 bg-green-50 text-green-800 hover:bg-green-100"
-          : "border-gray-300 bg-white text-gray-700 hover:border-green-300 hover:bg-green-50"
+          ? "border-emerald-700 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+          : "border-stone-300 bg-white text-stone-700 hover:border-emerald-300 hover:bg-emerald-50"
       }`}
     >
       {active ? activeLabel : inactiveLabel}

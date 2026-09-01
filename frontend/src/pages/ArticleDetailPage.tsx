@@ -159,7 +159,7 @@ function ArticleDetailPage() {
     return (
       <main className="flex-1 px-4 py-8 sm:px-6 sm:py-10 lg:px-0">
         <div
-          className="mx-auto max-w-4xl rounded-lg border border-gray-200 bg-white px-6 py-12 text-center text-sm text-gray-600 shadow-sm lg:mx-0"
+          className="mx-auto max-w-4xl rounded-lg border border-stone-200 bg-white px-6 py-12 text-center text-sm text-stone-600 shadow-sm lg:mx-0"
           role="status"
         >
           記事を読み込んでいます...
@@ -180,7 +180,7 @@ function ArticleDetailPage() {
           </div>
           <Link
             to={articleListUrl}
-            className="mt-5 inline-flex rounded-md text-sm font-medium text-green-800 underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700/40"
+            className="mt-5 inline-flex rounded-md text-sm font-medium text-emerald-800 underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700/40"
           >
             ← 記事一覧へ戻る
           </Link>
@@ -199,14 +199,14 @@ function ArticleDetailPage() {
       <div className="mx-auto max-w-4xl lg:mx-0">
         <Link
           to={articleListUrl}
-          className="mb-5 inline-flex rounded-md text-sm font-medium text-gray-600 transition-colors hover:text-green-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700/40"
+          className="mb-5 inline-flex rounded-md text-sm font-medium text-stone-600 transition-colors hover:text-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700/40"
         >
           ← 記事一覧へ戻る
         </Link>
 
-        <article className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm sm:p-8">
-          <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-500">
-            <span className="font-medium text-green-800">
+        <article className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm sm:p-8">
+          <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-stone-500">
+            <span className="font-medium text-emerald-800">
               {article.source.name}
             </span>
             <span aria-hidden="true">·</span>
@@ -215,26 +215,26 @@ function ArticleDetailPage() {
             </time>
           </div>
 
-          <h1 className="text-2xl font-semibold leading-tight tracking-tight text-gray-900 sm:text-3xl">
+          <h1 className="text-2xl font-semibold leading-tight tracking-tight text-stone-900 sm:text-3xl">
             {article.translated_title ?? article.title}
           </h1>
           {article.translated_title && (
-            <p className="mt-2 text-sm text-gray-500">
+            <p className="mt-2 text-sm text-stone-500">
               {article.title}
             </p>
           )}
 
           <section
-            className="mt-5 border-t border-gray-100 pt-4"
+            className="mt-5 border-t border-stone-100 pt-4"
             aria-labelledby="summary-heading"
           >
             <h2
               id="summary-heading"
-              className="mb-3 text-base font-semibold text-gray-900"
+              className="mb-3 text-base font-semibold text-stone-900"
             >
               概要
             </h2>
-            <p className="whitespace-pre-wrap break-words text-base leading-7 text-gray-700">
+            <p className="whitespace-pre-wrap break-words text-base leading-7 text-stone-700">
               {article.summary ?? "この記事の概要はありません。"}
             </p>
 
@@ -243,7 +243,7 @@ function ArticleDetailPage() {
                 href={article.url}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center justify-center rounded-md bg-green-700 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-green-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700/40 focus-visible:ring-offset-2"
+                className="inline-flex items-center justify-center rounded-md bg-emerald-700 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700/40 focus-visible:ring-offset-2"
               >
                 元記事を見る（新しいタブ）
               </a>
@@ -252,12 +252,12 @@ function ArticleDetailPage() {
         </article>
 
         <section
-          className="mt-5 rounded-lg border border-gray-200 bg-white px-5 py-4 shadow-sm sm:px-6 sm:py-5"
+          className="mt-5 rounded-lg border border-stone-200 bg-white px-5 py-4 shadow-sm sm:px-6 sm:py-5"
           aria-labelledby="status-heading"
         >
           <h2
             id="status-heading"
-            className="text-base font-semibold text-gray-900"
+            className="text-base font-semibold text-stone-900"
           >
             記事を整理
           </h2>
@@ -291,7 +291,7 @@ function ArticleDetailPage() {
           </div>
 
           {isUpdating && (
-            <p className="mt-3 text-sm text-gray-600" role="status">
+            <p className="mt-3 text-sm text-stone-600" role="status">
               状態を更新しています...
             </p>
           )}
@@ -303,17 +303,17 @@ function ArticleDetailPage() {
         </section>
 
         <section
-          className="mt-5 rounded-lg border border-gray-200 bg-white px-5 py-4 shadow-sm sm:px-6 sm:py-5"
+          className="mt-5 rounded-lg border border-stone-200 bg-white px-5 py-4 shadow-sm sm:px-6 sm:py-5"
           aria-labelledby="memo-heading"
         >
           <h2
             id="memo-heading"
-            className="text-base font-semibold text-gray-900"
+            className="text-base font-semibold text-stone-900"
           >
             自分用メモ
           </h2>
 
-          <p className="mt-1 text-sm text-gray-600">
+          <p className="mt-1 text-sm text-stone-600">
             この記事について覚えておきたいことを残せます。
           </p>
 
@@ -324,7 +324,7 @@ function ArticleDetailPage() {
             maxLength={5000}
             rows={5}
             disabled={isSavingMemo}
-            className="mt-4 w-full resize-y rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-green-700 focus:ring-2 focus:ring-green-700/20"
+            className="mt-4 w-full resize-y rounded-md border border-stone-300 px-3 py-2 text-sm text-stone-900 outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/20"
             placeholder="メモを入力してください"
           />
 
@@ -333,13 +333,13 @@ function ArticleDetailPage() {
               type="button"
               onClick={() => void handleMemoSave()}
               disabled={isSavingMemo}
-              className="rounded-md bg-green-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700/40 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700/40 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSavingMemo ? "保存中..." : "メモを保存"}
             </button>
 
             {memoMessage && (
-              <p className="text-sm text-gray-600" aria-live="polite">
+              <p className="text-sm text-stone-600" aria-live="polite">
                 {memoMessage}
               </p>
             )}

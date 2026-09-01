@@ -118,11 +118,11 @@ function ArticleListPage() {
     <main className="flex-1 px-4 py-8 text-left sm:px-6 sm:py-10 lg:px-0">
       <div className="w-full">
         <div className="mb-7 sm:mb-8">
-          <p className="mb-1 text-sm font-medium text-green-700">MY NEWS</p>
-          <h1 className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">
+          <p className="mb-1 text-sm font-medium text-emerald-700">MY NEWS</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-stone-900 sm:text-3xl">
             記事一覧
           </h1>
-          <p className="mt-2 text-sm leading-relaxed text-gray-600">
+          <p className="mt-2 text-sm leading-relaxed text-stone-600">
             気になる技術ニュースを選び、詳細や保存状態を確認できます。
           </p>
         </div>
@@ -135,11 +135,11 @@ function ArticleListPage() {
               onChange={(e) => setInputValue(e.target.value)}
               placeholder="キーワードで検索..."
               aria-label="記事をキーワードで検索"
-              className="min-w-0 flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 transition-colors focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-700/30"
+              className="min-w-0 flex-1 rounded-md border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 placeholder-stone-400 transition-colors focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-700/30"
             />
             <button
               type="submit"
-              className="shrink-0 rounded-md bg-green-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700/40"
+              className="shrink-0 rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700/40"
             >
               検索
             </button>
@@ -150,7 +150,7 @@ function ArticleListPage() {
 
         {isLoading && (
           <div
-            className="rounded-lg border border-gray-200 bg-white px-6 py-12 text-center text-sm text-gray-600 shadow-sm"
+            className="rounded-lg border border-stone-200 bg-white px-6 py-12 text-center text-sm text-stone-600 shadow-sm"
             role="status"
           >
             記事を読み込んでいます...
@@ -167,14 +167,14 @@ function ArticleListPage() {
         )}
 
         {!isLoading && !errorMessage && articles.length === 0 && (
-          <div className="rounded-lg border border-gray-200 bg-white px-6 py-12 text-center shadow-sm">
-            <h2 className="text-base font-semibold text-gray-900">
+          <div className="rounded-lg border border-stone-200 bg-white px-6 py-12 text-center shadow-sm">
+            <h2 className="text-base font-semibold text-stone-900">
               {hasFilters
                 ? "条件に一致する記事がありません。"
                 : "まだ記事がありません。"}
             </h2>
 
-            <p className="mt-2 text-sm text-gray-600">
+            <p className="mt-2 text-sm text-stone-600">
               {hasFilters
                 ? "絞り込み条件を変更して、もう一度お試しください。"
                 : "記事が取得されると、ここに一覧で表示されます。"}
@@ -190,10 +190,10 @@ function ArticleListPage() {
               return (
                 <article
                   key={article.id}
-                  className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition-colors hover:border-green-200 sm:p-6"
+                  className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm transition-colors hover:border-emerald-200 sm:p-6"
                 >
-                  <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-500">
-                    <span className="font-medium text-gray-700">
+                  <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-stone-500">
+                    <span className="font-medium text-stone-700">
                       {article.source.name}
                     </span>
                     <span aria-hidden="true">·</span>
@@ -202,23 +202,23 @@ function ArticleListPage() {
                     </time>
                   </div>
 
-                  <h2 className="text-lg font-semibold leading-snug tracking-tight text-gray-900 sm:text-xl">
+                  <h2 className="text-lg font-semibold leading-snug tracking-tight text-stone-900 sm:text-xl">
                     <Link
                       to={`/articles/${article.id}`}
                       state={{ fromSearch: searchParams.toString() }}
-                      className="rounded-sm transition-colors hover:text-green-800 hover:underline hover:underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700/40"
+                      className="rounded-sm transition-colors hover:text-emerald-800 hover:underline hover:underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700/40"
                     >
                       {article.translated_title ?? article.title}
                     </Link>
                   </h2>
                   {article.translated_title && (
-                    <p className="mt-1 text-sm text-gray-500">
+                    <p className="mt-1 text-sm text-stone-500">
                       {article.title}
                     </p>
                   )}
 
                   <div
-                    className="mt-5 flex flex-wrap gap-2 border-t border-gray-100 pt-4"
+                    className="mt-5 flex flex-wrap gap-2 border-t border-stone-100 pt-4"
                     aria-label="記事の状態"
                   >
                     <StatusBadge
@@ -252,12 +252,12 @@ function ArticleListPage() {
               type="button"
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage <= 1}
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
               前へ
             </button>
 
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-stone-600">
               {currentPage} / {lastPage}
             </span>
 
@@ -265,7 +265,7 @@ function ArticleListPage() {
               type="button"
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage >= lastPage}
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
               次へ
             </button>

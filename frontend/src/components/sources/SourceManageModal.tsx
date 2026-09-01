@@ -125,13 +125,13 @@ function SourceManageModal({ isOpen, onClose }: Props) {
             aria-label="配信元を管理"
         >
             <div className="flex max-h-[80vh] w-full max-w-md flex-col rounded-xl bg-white shadow-xl">
-                <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
-                    <h2 className="text-base font-semibold text-gray-900">配信元を管理</h2>
+                <div className="flex items-center justify-between border-b border-stone-200 px-5 py-4">
+                    <h2 className="text-base font-semibold text-stone-900">配信元を管理</h2>
                     <button
                         type="button"
                         onClick={onClose}
                         aria-label="閉じる"
-                        className="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700/40"
+                        className="rounded-md p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700/40"
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -149,7 +149,7 @@ function SourceManageModal({ isOpen, onClose }: Props) {
                     </button>
                 </div>
 
-                <div className="border-b border-gray-200 px-5 py-4">
+                <div className="border-b border-stone-200 px-5 py-4">
                     <div className="flex gap-2">
                         <input
                             type="url"
@@ -160,13 +160,13 @@ function SourceManageModal({ isOpen, onClose }: Props) {
                             }}
                             placeholder="https://example.com/feed.xml"
                             disabled={isRegistering}
-                            className="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm placeholder-gray-400 focus:border-green-700 focus:outline-none focus:ring-1 focus:ring-green-700/40 disabled:bg-gray-50 disabled:text-gray-400"
+                            className="min-w-0 flex-1 rounded-lg border border-stone-300 px-3 py-2 text-sm placeholder-stone-400 focus:border-emerald-700 focus:outline-none focus:ring-1 focus:ring-emerald-700/40 disabled:bg-stone-50 disabled:text-stone-400"
                         />
                         <button
                             type="button"
                             onClick={() => void handleRegister()}
                             disabled={isRegistering || !feedUrl.trim()}
-                            className="shrink-0 rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700/40 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="shrink-0 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700/40 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             {isRegistering ? "登録中..." : "追加"}
                         </button>
@@ -180,7 +180,7 @@ function SourceManageModal({ isOpen, onClose }: Props) {
 
                 <div className="min-h-0 flex-1 overflow-y-auto p-5">
                     {isLoading && (
-                        <p className="text-sm text-gray-500" role="status">
+                        <p className="text-sm text-stone-500" role="status">
                             読み込み中...
                         </p>
                     )}
@@ -207,19 +207,19 @@ function SourceManageModal({ isOpen, onClose }: Props) {
                                     return (
                                         <li
                                             key={source.id}
-                                            className="flex items-center justify-between gap-3 rounded-lg border border-gray-100 px-4 py-3"
+                                            className="flex items-center justify-between gap-3 rounded-lg border border-stone-100 px-4 py-3"
                                         >
-                                            <span className="min-w-0 break-words text-sm font-medium text-gray-800">
+                                            <span className="min-w-0 break-words text-sm font-medium text-stone-800">
                                                 {source.name}
                                             </span>
                                             <button
                                                 type="button"
                                                 onClick={() => void handleToggle(source)}
                                                 disabled={isPending}
-                                                className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700/40 disabled:cursor-not-allowed disabled:opacity-50 ${
+                                                className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700/40 disabled:cursor-not-allowed disabled:opacity-50 ${
                                                     source.is_subscribed
-                                                        ? "border border-gray-300 bg-white text-gray-700 hover:border-red-200 hover:bg-red-50 hover:text-red-700"
-                                                        : "bg-green-700 text-white hover:bg-green-800"
+                                                        ? "border border-stone-300 bg-white text-stone-700 hover:border-red-200 hover:bg-red-50 hover:text-red-700"
+                                                        : "bg-emerald-700 text-white hover:bg-emerald-800"
                                                 }`}
                                             >
                                                 {isPending ? "..." : source.is_subscribed ? "解除" : "追加"}
