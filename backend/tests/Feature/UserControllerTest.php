@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Article;
+use App\Models\Source;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -63,5 +65,31 @@ class UserControllerTest extends TestCase
         ]);
 
         $response->assertUnauthorized();
+    }
+
+    public function test_退会後も他ユーザー購読中のSourceとArticleが残りcreated_by_user_idがNULLになる(): void
+    {
+        $creator = User::factory()->create(['password' => bcrypt('password123')]);
+        $subscriber = User::factory()->create();
+
+        $source = Source::factory()->create(['created_by_user_id' => $creator->id]);
+        $article = Article::factory()->create(['source_id' => $source->id]);
+        $subscriber->sources()->attach($source->id);
+
+        $this->actingAs($creator)->deleteJson('/api/user', ['password' => 'password123']);
+
+        $this->assertDatabaseHas('sources', ['id' => $source->id, 'created_by_user_id' => null]);
+        $this->assertDatabaseHas('articles', ['id' => $article->id]);
+        $this->assertDatabaseHas('user_sources', ['user_id' => $subscriber->id, 'source_id' => $source->id]);
+    }
+
+    public function test_退会後に購読者がいないSourceもNULLになり残る(): void
+    {
+        $creator = User::factory()->create(['password' => bcrypt('password123')]);
+        $source = Source::factory()->create(['created_by_user_id' => $creator->id]);
+
+        $this->actingAs($creator)->deleteJson('/api/user', ['password' => 'password123']);
+
+        $this->assertDatabaseHas('sources', ['id' => $source->id, 'created_by_user_id' => null]);
     }
 }
