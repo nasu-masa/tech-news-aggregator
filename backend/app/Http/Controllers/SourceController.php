@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreSourceRequest;
+use App\Jobs\ImportFeedJob;
 use App\Models\Source;
 use App\Services\FeedFetcher;
 use App\Services\FeedParser;
@@ -91,6 +92,8 @@ class SourceController extends Controller
 
             return $source;
         });
+
+        ImportFeedJob::dispatch($source);
 
         $source->is_subscribed = true;
 
