@@ -81,6 +81,20 @@ services:
       redis:
         condition: service_started
 
+  # Scheduler
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    command: php artisan schedule:work
+    volumes:
+      - ./backend:/var/www/html
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
   # 開発用メールサーバー
   mailhog:
     image: mailhog/mailhog
