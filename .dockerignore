@@ -1,0 +1,34 @@
+# Git
+.git
+
+# 秘密情報
+.env
+backend/.env
+frontend/.env
+
+# Dockerビルド内で生成されるもの
+backend/vendor/
+frontend/node_modules/
+frontend/dist/
+
+# 開発用データ
+backend/database/database.sqlite
+
+# 開発環境で生成されたLaravelキャッシュ（本番では正しい環境変数で再生成が必要）
+backend/bootstrap/cache/packages.php
+backend/bootstrap/cache/services.php
+
+# 開発環境で生成されたBladeキャッシュ
+backend/storage/framework/views/
+
+# ログ
+backend/storage/logs/laravel.log
+
+# テスト成果物
+backend/.phpunit.result.cache
+
+# OS / エディタ
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

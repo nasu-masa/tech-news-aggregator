@@ -1,0 +1,33 @@
+FROM composer:2 AS deps
+
+WORKDIR /app
+
+COPY backend/composer.json backend/composer.lock ./
+RUN composer install \
+    --no-dev \
+    --no-scripts \
+    --prefer-dist \
+    --optimize-autoloader
+
+FROM php:8.4-fpm
+
+RUN apt-get update && apt-get install -y \
+        libpq-dev \
+        libzip-dev \
+        libonig-dev \
+    && docker-php-ext-install \
+        pdo_pgsql \
+        zip \
+        bcmath \
+        mbstring \
+        pcntl \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /var/www/html
+
+COPY --from=deps /app/vendor ./vendor
+COPY backend/ .
+
+RUN chown -R www-data:www-data storage bootstrap/cache
