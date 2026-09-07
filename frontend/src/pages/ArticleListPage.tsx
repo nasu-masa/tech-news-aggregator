@@ -217,26 +217,34 @@ function ArticleListPage() {
                     </p>
                   )}
 
-                  <div
-                    className="mt-5 flex flex-wrap gap-2 border-t border-stone-100 pt-4"
-                    aria-label="記事の状態"
-                  >
-                    <StatusBadge
-                      active={status?.is_read ?? false}
-                      activeLabel="既読"
-                      inactiveLabel="未読"
-                    />
-                    <StatusBadge
-                      active={status?.is_favorite ?? false}
-                      activeLabel="お気に入り済み"
-                      inactiveLabel="お気に入り未登録"
-                    />
-                    <StatusBadge
-                      active={status?.is_read_later ?? false}
-                      activeLabel="あとで見るに追加済み"
-                      inactiveLabel="あとで見る未登録"
-                    />
-                  </div>
+                  {(status?.is_read || status?.is_favorite || status?.is_read_later) && (
+                    <div
+                      className="mt-5 flex flex-wrap gap-2 border-t border-stone-100 pt-4"
+                      aria-label="記事の状態"
+                    >
+                      {status?.is_read && (
+                        <StatusBadge
+                          active={true}
+                          activeLabel="既読"
+                          inactiveLabel="未読"
+                        />
+                      )}
+                      {status?.is_favorite && (
+                        <StatusBadge
+                          active={true}
+                          activeLabel="お気に入り済み"
+                          inactiveLabel="お気に入り未登録"
+                        />
+                      )}
+                      {status?.is_read_later && (
+                        <StatusBadge
+                          active={true}
+                          activeLabel="あとで見るに追加済み"
+                          inactiveLabel="あとで見る未登録"
+                        />
+                      )}
+                    </div>
+                  )}
                 </article>
               );
             })}
