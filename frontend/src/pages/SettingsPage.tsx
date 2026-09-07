@@ -40,7 +40,7 @@ function SettingsPage() {
 
     try {
       await updateProfile(data);
-      const updated = await refreshUser();
+      const updated = await refreshUser({ background: true });
 
       if (updated && !updated.email_verified_at) {
         navigate("/verify-email", {

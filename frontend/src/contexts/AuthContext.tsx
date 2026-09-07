@@ -19,8 +19,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [authError, setAuthError] = useState<unknown | null>(null);
   const initialCheckStarted = useRef(false);
 
-  const refreshUser = useCallback(async (): Promise<User | null> => {
-    setIsCheckingAuth(true);
+  const refreshUser = useCallback(async (options?: { background?: boolean }): Promise<User | null> => {
+    if (!options?.background) setIsCheckingAuth(true);
     setAuthError(null);
 
     try {
@@ -41,7 +41,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setAuthError(error);
       throw error;
     } finally {
-      setIsCheckingAuth(false);
+      if (!options?.background) setIsCheckingAuth(false);
     }
   }, []);
 

@@ -18,6 +18,7 @@ function SourceManageModal({ isOpen, onClose }: Props) {
     const [feedUrl, setFeedUrl] = useState("");
     const [isRegistering, setIsRegistering] = useState(false);
     const [registerError, setRegisterError] = useState("");
+    const [registerSuccess, setRegisterSuccess] = useState("");
     const backdropRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -29,6 +30,7 @@ function SourceManageModal({ isOpen, onClose }: Props) {
         setActionError("");
         setFeedUrl("");
         setRegisterError("");
+        setRegisterSuccess("");
 
         getSources()
             .then((data) => {
@@ -61,13 +63,19 @@ function SourceManageModal({ isOpen, onClose }: Props) {
     const handleRegister = async () => {
         if (!feedUrl.trim() || isRegistering) return;
         setRegisterError("");
+        setRegisterSuccess("");
         setIsRegistering(true);
         try {
             await registerSource(feedUrl.trim());
             setFeedUrl("");
-            const data = await getSources();
-            setSources(data);
+            setRegisterSuccess("配信元を追加しました。記事の反映には時間がかかる場合があります。");
             window.dispatchEvent(new CustomEvent(SOURCES_UPDATED_EVENT));
+            try {
+                const data = await getSources();
+                setSources(data);
+            } catch {
+                setRegisterError("配信元の追加は完了しましたが、一覧を再取得できませんでした。配信元の管理を開き直してください。");
+            }
         } catch (err) {
             if (axios.isAxiosError(err) && err.response?.status === 422) {
                 const msgs = (err.response.data as { errors?: { feed_url?: string[] } })?.errors
@@ -171,6 +179,14 @@ function SourceManageModal({ isOpen, onClose }: Props) {
                             {isRegistering ? "登録中..." : "追加"}
                         </button>
                     </div>
+                    {registerSuccess && (
+                        <p
+                            className="mt-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-700"
+                            role="status"
+                        >
+                            {registerSuccess}
+                        </p>
+                    )}
                     {registerError && (
                         <p className="mt-1.5 text-xs text-red-700" role="alert">
                             {registerError}

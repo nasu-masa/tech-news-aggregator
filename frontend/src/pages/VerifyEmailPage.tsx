@@ -1,10 +1,13 @@
 import { useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation, useSearchParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { resendVerificationEmail } from "../lib/auth";
 
 function VerifyEmailPage() {
   const { user } = useAuth();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const successMessage = (location.state as { message?: string } | null)?.message;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [isResendError, setIsResendError] = useState(false);
@@ -32,7 +35,13 @@ function VerifyEmailPage() {
   }
 
   if (user.email_verified_at !== null) {
-    return <Navigate to="/" replace />;
+    return (
+      <Navigate
+        to="/"
+        replace
+        state={searchParams.get("verified") === "1" ? { emailVerified: true } : null}
+      />
+    );
   }
 
   return (
@@ -44,6 +53,15 @@ function VerifyEmailPage() {
         <p className="mb-7 text-sm leading-relaxed text-stone-600">
           登録いただいたメールアドレスに認証メールを送信しました。
         </p>
+
+        {successMessage && (
+          <p
+            className="mb-5 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-700"
+            role="status"
+          >
+            {successMessage}
+          </p>
+        )}
 
         <button
           className="block w-full rounded-md bg-emerald-700 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700/40 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-60"

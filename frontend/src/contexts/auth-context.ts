@@ -5,7 +5,7 @@ export type AuthContextValue = {
   user: User | null;
   isCheckingAuth: boolean;
   authError: unknown | null;
-  refreshUser: () => Promise<User | null>;
+  refreshUser: (options?: { background?: boolean }) => Promise<User | null>;
   clearUser: () => void;
 };
 

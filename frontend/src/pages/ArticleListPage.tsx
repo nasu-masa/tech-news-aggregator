@@ -1,14 +1,33 @@
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { getArticles } from "../api/articles";
 import { StatusBadge } from "../components/articles/ArticleStatus";
 import { parseArticleStatusFilter } from "../lib/articleFilters";
 import { formatArticleDate } from "../lib/formatArticleDate";
 import { parsePositiveIntegerParam } from "../lib/parsePositiveIntegerParam";
 import MobileArticleFilters from "../components/articles/MobileArticleFilters";
+import { useAuth } from "../hooks/useAuth";
 import type { Article } from "../types/article";
 
 function ArticleListPage() {
+  const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [showVerificationSuccess] = useState(
+    () => (location.state as { emailVerified?: boolean } | null)?.emailVerified === true
+      && Boolean(user?.email_verified_at),
+  );
+
+  useEffect(() => {
+    if ((location.state as { emailVerified?: boolean } | null)?.emailVerified !== true) return;
+
+    const { emailVerified: _emailVerified, ...remainingState } = location.state;
+    void navigate(
+      { pathname: location.pathname, search: location.search, hash: location.hash },
+      { replace: true, state: remainingState },
+    );
+  }, [location, navigate]);
+
   const [searchParams, setSearchParams] = useSearchParams();
   const sourceId = parsePositiveIntegerParam(searchParams.get("source_id"));
   const status = parseArticleStatusFilter(searchParams.get("status"));
@@ -126,6 +145,15 @@ function ArticleListPage() {
             気になる技術ニュースを選び、詳細や保存状態を確認できます。
           </p>
         </div>
+
+        {showVerificationSuccess && user?.email_verified_at && (
+          <p
+            className="mb-5 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-700"
+            role="status"
+          >
+            メール認証が完了しました
+          </p>
+        )}
 
         <form onSubmit={handleSearch} className="mb-6">
           <div className="flex gap-2">
