@@ -58,8 +58,14 @@ function PrivacyPage() {
           <p className="mb-4 text-sm leading-relaxed text-stone-600">
             記事タイトル等の翻訳機能を提供するため、DeepL APIを利用します。
           </p>
+          <h3 className="mb-2 text-sm font-semibold text-stone-700">
+            Amazon Simple Email Service（Amazon SES）
+          </h3>
+          <p className="mb-4 text-sm leading-relaxed text-stone-600">
+            メール認証、パスワード再設定、その他のメール送信のため、Amazon Simple Email Service（Amazon SES）を利用します。
+          </p>
           <p className="text-sm leading-relaxed text-stone-600">
-            外部サービスに送信された情報は、それぞれのサービス提供者のプライバシーポリシー等に基づいて取り扱われる場合があります。
+            これらの外部サービスに送信された情報は、それぞれのサービス提供者のプライバシーポリシー等に基づいて取り扱われる場合があります。
           </p>
         </section>
 
