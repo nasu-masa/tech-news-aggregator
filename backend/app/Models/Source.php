@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\UtcDateTime;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -23,6 +24,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Source extends Model
 {
     use HasFactory;
+
+    protected function casts(): array
+    {
+        return [
+            'last_success_at' => UtcDateTime::class,
+            'last_error_at' => UtcDateTime::class,
+        ];
+    }
 
     public function articles(): HasMany
     {

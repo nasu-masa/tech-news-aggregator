@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\UtcDateTime;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -24,7 +25,7 @@ class UserArticle extends Model
             'is_favorite' => 'boolean',
             'is_read' => 'boolean',
             'is_read_later' => 'boolean',
-            'read_at' => 'datetime',
+            'read_at' => UtcDateTime::class,
         ];
     }
 

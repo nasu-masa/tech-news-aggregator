@@ -28,7 +28,7 @@ class DevelopmentSeeder extends Seeder
                 'password' => Hash::make('password'),
                 'email_verified_at' => CarbonImmutable::parse(
                     '2026-08-01 00:00:00+09:00'
-                ),
+                )->utc(),
             ],
         );
 
@@ -74,7 +74,7 @@ class DevelopmentSeeder extends Seeder
             $sources->only(['backend', 'frontend', 'ai'])->pluck('id')->all()
         );
 
-        $publishedAt = CarbonImmutable::parse('2026-08-20 12:00:00+09:00');
+        $publishedAt = CarbonImmutable::parse('2026-08-20 12:00:00+09:00')->utc();
         $articleSequence = 0;
 
         foreach ($sources as $sourceKey => $source) {
@@ -138,7 +138,7 @@ class DevelopmentSeeder extends Seeder
             3 => [
                 ...$baseState,
                 'is_read' => true,
-                'read_at' => CarbonImmutable::parse('2026-08-21 09:00:00+09:00'),
+                'read_at' => CarbonImmutable::parse('2026-08-21 09:00:00+09:00')->utc(),
             ],
             4 => [
                 ...$baseState,
@@ -183,7 +183,7 @@ class DevelopmentSeeder extends Seeder
                 'is_read' => true,
                 'is_favorite' => true,
                 'memo' => 'Review this backend article.',
-                'read_at' => CarbonImmutable::parse('2026-08-21 10:00:00+09:00'),
+                'read_at' => CarbonImmutable::parse('2026-08-21 10:00:00+09:00')->utc(),
             ],
             'frontend' => [
                 ...$baseState,
@@ -196,7 +196,7 @@ class DevelopmentSeeder extends Seeder
                 'is_read' => true,
                 'is_read_later' => true,
                 'memo' => 'Follow up on this AI article.',
-                'read_at' => CarbonImmutable::parse('2026-08-21 11:00:00+09:00'),
+                'read_at' => CarbonImmutable::parse('2026-08-21 11:00:00+09:00')->utc(),
             ],
             'infrastructure' => [
                 ...$baseState,
@@ -204,7 +204,7 @@ class DevelopmentSeeder extends Seeder
                 'is_favorite' => true,
                 'is_read_later' => true,
                 'memo' => 'Discuss this infrastructure article.',
-                'read_at' => CarbonImmutable::parse('2026-08-21 12:00:00+09:00'),
+                'read_at' => CarbonImmutable::parse('2026-08-21 12:00:00+09:00')->utc(),
             ],
         };
     }
