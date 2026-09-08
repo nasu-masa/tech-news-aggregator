@@ -6,6 +6,7 @@ import { parseArticleStatusFilter } from "../lib/articleFilters";
 import { formatArticleDate } from "../lib/formatArticleDate";
 import { parsePositiveIntegerParam } from "../lib/parsePositiveIntegerParam";
 import MobileArticleFilters from "../components/articles/MobileArticleFilters";
+import SourceManageModal from "../components/sources/SourceManageModal";
 import { useAuth } from "../hooks/useAuth";
 import type { Article } from "../types/article";
 
@@ -39,6 +40,8 @@ function ArticleListPage() {
   useEffect(() => {
     setInputValue(keyword ?? "");
   }, [keyword]);
+
+  const [isSourceModalOpen, setIsSourceModalOpen] = useState(false);
 
   const [articles, setArticles] = useState<Article[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -134,6 +137,7 @@ function ArticleListPage() {
   };
 
   return (
+    <>
     <main className="flex-1 px-4 py-8 text-left sm:px-6 sm:py-10 lg:px-0">
       <div className="w-full">
         <div className="mb-7 sm:mb-8">
@@ -205,8 +209,25 @@ function ArticleListPage() {
             <p className="mt-2 text-sm text-stone-600">
               {hasFilters
                 ? "絞り込み条件を変更して、もう一度お試しください。"
-                : "記事が取得されると、ここに一覧で表示されます。"}
+                : "記事を表示するには、配信元（RSSフィード）を追加してください。"}
             </p>
+
+            {hasFilters ? (
+              <Link
+                to="/"
+                className="mt-5 inline-block rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50 hover:text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700/40"
+              >
+                すべての記事を表示
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsSourceModalOpen(true)}
+                className="mt-5 rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700/40"
+              >
+                配信元を追加する
+              </button>
+            )}
           </div>
         )}
 
@@ -309,6 +330,11 @@ function ArticleListPage() {
         )}
       </div>
     </main>
+    <SourceManageModal
+      isOpen={isSourceModalOpen}
+      onClose={() => setIsSourceModalOpen(false)}
+    />
+    </>
   );
 }
 
