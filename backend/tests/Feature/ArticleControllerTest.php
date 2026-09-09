@@ -411,6 +411,36 @@ class ArticleControllerTest extends TestCase
             ->assertJsonPath('data.0.title', 'Laravelの新機能');
     }
 
+    public function test_翻訳タイトルのキーワードで記事を検索できる(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($user);
+
+        $article = Article::factory()->create([
+            'title' => 'New framework features',
+            'translated_title' => 'フレームワークの新機能を紹介',
+            'summary' => 'An overview of the latest release.',
+        ]);
+
+        Article::factory()->create([
+            'title' => 'Database performance tips',
+            'translated_title' => 'データベースの性能改善',
+            'summary' => 'How to improve query performance.',
+        ]);
+
+        $response = $this->getJson('/api/articles?'.http_build_query([
+            'keyword' => '新機能',
+        ]));
+
+        $response
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $article->id);
+    }
+
     public function test_概要のキーワードで記事を検索できる(): void
     {
         $user = User::factory()->create([
