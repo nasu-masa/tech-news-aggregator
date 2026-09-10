@@ -27,3 +27,8 @@ cookies.txt
 # --- Root environment ---
 .env
 !.env.example
+
+# --- Playwright ---
+!frontend/.env.e2e.example
+frontend/playwright-report/
+frontend/test-results/
