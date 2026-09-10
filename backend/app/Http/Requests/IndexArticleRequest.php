@@ -15,7 +15,7 @@ class IndexArticleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'keyword' => ['sometimes', 'string'],
+            'keyword' => ['sometimes', 'string', 'max:255'],
             'source_id' => ['sometimes', 'integer'],
             'subscribed_only' => ['sometimes', 'boolean'],
             'status' => ['nullable', Rule::in([
@@ -31,6 +31,7 @@ class IndexArticleRequest extends FormRequest
     {
         return [
             'keyword.string' => '検索キーワードの形式が正しくありません。',
+            'keyword.max' => '検索キーワードは255文字以内で入力してください。',
             'source_id.integer' => 'ニュースソースの指定が正しくありません。',
             'subscribed_only.boolean' => 'ニュースソースの絞り込み条件が正しくありません。',
             'status.in' => '記事の状態には未読・既読・お気に入り・あとで見るのいずれかを指定してください。',
