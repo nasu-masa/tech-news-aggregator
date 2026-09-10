@@ -17,9 +17,9 @@
 - 共通ソースの購読・解除、HTTPSのRSS / Atom URLによるソース追加
 - 有効なソースを1時間ごとに取得。新規ソース登録時にも取得ジョブを投入
 - 記事一覧・詳細・配信元へのリンク、20件単位のページネーション
-- 原文タイトル・翻訳タイトル・概要のキーワード検索、ソース・未読／既読・お気に入り・あとで読むによる絞り込み
+- 原文／翻訳タイトル・原文／翻訳概要のキーワード検索、ソース・未読／既読・お気に入り・あとで読むによる絞り込み
 - ユーザーごとの記事状態とメモ（最大5,000文字）の保存
-- DeepLによる新規記事タイトルの日本語翻訳（API設定が必要）
+- DeepLによる新規記事のタイトル・概要の日本語翻訳（API設定が必要）
 - PC・モバイル向けのレイアウト、お問い合わせ先・プライバシーポリシーの表示
 
 ## ◎ 使用技術
@@ -45,7 +45,7 @@
                                   └─ SMTP：認証・パスワードリセットメール
 
 scheduler → feeds:import → Redis → queue-worker → RSS / Atom取得・記事保存
-                                             └→ DeepLタイトル翻訳
+                                             └→ DeepLタイトル・概要翻訳
 ```
 
 ローカルはVite、本番はNginxがSPAを配信します。DBとRedisには永続ボリュームを使用し、フィード取得・翻訳はキューで非同期処理します。
@@ -145,7 +145,11 @@ docker compose exec backend php artisan feeds:import
 
 ### ◇ 翻訳を利用する場合
 
-`backend/.env`の`DEEPL_API_KEY`と`DEEPL_API_URL`を設定し、`docker compose restart queue-worker scheduler`で反映します。未設定では翻訳に失敗しますが、記事は保存され、原文タイトルで閲覧できます。
+`backend/.env`の`DEEPL_API_KEY`と`DEEPL_API_URL`を設定し、`docker compose restart queue-worker scheduler`で反映します。未設定では翻訳に失敗しますが、記事は保存され、原文タイトル・概要で閲覧できます。
+
+翻訳Jobはタイトル・概要を個別に保存し、失敗した場合は最大3回試行します。保存済みの訳文、空の文章、ひらがな・カタカナを含む文章は翻訳を省きます。再試行では成功済みの項目を再送しません。概要がある記事は通常、タイトルに加えて概要分の1リクエストと利用文字数が増えます。API成功後のDB保存失敗などでは、再試行時に同じ文章を送る可能性があります。
+
+`translated_summary`は初期migrationにnullableな`text`型として定義済みです。今回の追加migrationや既存記事の一括翻訳はありません。既存記事の再取得では翻訳Jobを追加しません。バックフィル・原文更新時の再翻訳は今後の対応です。反映時は通常の`php artisan migrate --force`でスキーマを確認し、`php artisan queue:restart`で常駐workerに新コードを読み込ませてください。
 
 ## ◎ Seeder・テストユーザー
 
@@ -207,7 +211,7 @@ npm run test:e2e
 
 各テスト前に`DevelopmentSeeder`を自動実行し、対象ユーザーの購読・記事状態を初期化します（`APP_ENV=local`必須）。既存DB全体の削除は行いません。専用のローカル環境で実行し、同じユーザーでの手動操作や複数のE2Eプロセスの同時実行は避けてください。認証情報は環境変数でも指定でき、`.env.e2e`はGit管理対象外です。
 
-3ケースでログイン・一覧、キーワード検索、お気に入りの登録／解除と永続化、ログアウト後のアクセス制限を確認します。1 worker・リトライなしで実行し、外部へのブラウザリクエストは遮断します。scheduler / queue-workerが起動中なら開始前にエラーにします。
+4ケースでログイン・一覧、キーワード検索、お気に入りの登録／解除と永続化、ログアウト後のアクセス制限、一覧・詳細の翻訳概要優先／原文表示を確認します。1 worker・リトライなしで実行し、外部へのブラウザリクエストは遮断します。scheduler / queue-workerが起動中なら開始前にエラーにします。
 
 失敗時のスクリーンショット・traceは`frontend/test-results/`、HTMLレポートは`frontend/playwright-report/`に出力します。`npx playwright show-report`で確認できます。認証情報を含み得るため成果物の公開は避けてください。終了後、通常のフィード取得を再開する場合のみ、ルートで`docker compose start scheduler queue-worker`を実行します。
 
@@ -217,11 +221,11 @@ npm run test:e2e
 
 - **backend**：PHP 8.4でComposer依存関係をインストールし、`php artisan test`を実行。SQLiteのインメモリDBを使い、`PostgresTimezoneTest`はスキップします。
 - **frontend**：Node.js 22で`npm ci`、`npm run lint`、`npm run build`を実行。npmのダウンロードキャッシュを利用します。
-- **e2e**：runner内で既存ComposeのDB・Redis・MailHog・Laravel・Nginx・Viteを起動し、HTTP応答を確認後、Chromiumで上記3ケースを実行します。
+- **e2e**：runner内で既存ComposeのDB・Redis・MailHog・Laravel・Nginx・Viteを起動し、HTTP応答を確認後、Chromiumで上記4ケースを実行します。
 
 CIの環境設定は`.env.example`群のローカル用ダミー値を使用し、APP_KEYは実行時に生成します。E2E認証情報はDevelopmentSeederの既存の公開ローカル用定義から読み取り、各テスト前にメール認証済みユーザー・記事・状態を初期化します（`APP_ENV=local`）。GitHub Secretsの登録は不要です。scheduler / queue-workerは起動せず、外部RSS・DeepL・SESや本番環境には接続しません。
 
-E2E失敗時はPlaywrightレポート・スクリーンショット・traceをartifactとして7日間保存します。認証セッションを含み得るため、共有範囲に注意してください。初回実行では3 jobの成功、Dockerの起動とマイグレーション、E2Eの3件成功を確認してください。ローカル実行方法は上記のE2E手順を参照してください。
+E2E失敗時はPlaywrightレポート・スクリーンショット・traceをartifactとして7日間保存します。認証セッションを含み得るため、共有範囲に注意してください。初回実行では3 jobの成功、Dockerの起動とマイグレーション、E2Eの4件成功を確認してください。ローカル実行方法は上記のE2E手順を参照してください。
 
 ## ◎ ディレクトリ構成
 
@@ -262,15 +266,15 @@ tech-news-aggregator/
 | ホスティング | AWS Lightsail / Docker Compose |
 | Web配信 | Nginx + HTTPS |
 | メール | Amazon SES（認証・パスワード再設定）|
-| 翻訳 | DeepL API（新規記事タイトル）|
+| 翻訳 | DeepL API（新規記事のタイトル・概要）|
 | ログ・監視 | CloudWatch（Laravel / Nginxログ、CPU・メモリ・ディスク）|
 
 ### ◇ 利用上の制限
 
 - 記事・ソースの利用にはメール認証が必要です。
 - 取得は毎時、各ソース1回につき最大30記事。配信元のフィード内容・応答に依存します。
-- 翻訳は新規記事タイトルが対象で、概要・本文は翻訳しません。検索対象は原文タイトル・翻訳タイトル・概要です。
-- 詳細画面にはフィード由来の概要を表示し、全文は配信元で閲覧します。
+- 翻訳は新規記事のタイトルと空でない概要が対象です。本文は翻訳しません。検索対象は原文タイトル・翻訳タイトル・原文概要・翻訳概要です（キーワードは255文字以内）。
+- 一覧・詳細には日本語訳の概要を優先表示し、未翻訳なら原文概要を表示します。原文はDBに保持し、全文は配信元で閲覧します。
 
 ## ◎ 今後の改善項目
 
@@ -283,7 +287,7 @@ tech-news-aggregator/
 ### ◇ 翻訳機能
 
 * 翻訳失敗・利用量の管理
-* 未翻訳記事の再処理
+* 既存の未翻訳記事のバックフィル・原文更新時の再翻訳
 
 ### ◇ 運用
 
