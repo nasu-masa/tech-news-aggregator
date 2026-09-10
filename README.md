@@ -31,7 +31,7 @@
 | キャッシュ・キュー | Redis 7 |
 | フィード解析・翻訳 | laminas/laminas-feed / DeepL API |
 | 実行環境 | Docker Compose / Nginx 1.27 / Node.js 22（ビルド・開発）|
-| テスト・静的チェック | PHPUnit 12 / SQLite（通常テスト）/ Oxlint / TypeScript |
+| テスト・静的チェック | PHPUnit 12 / SQLite（通常テスト）/ Oxlint / TypeScript / GitHub Actions q|
 | 開発用メール | MailHog |
 
 ## ◎ システム構成
@@ -49,6 +49,55 @@ scheduler → feeds:import → Redis → queue-worker → RSS / Atom取得・記
 ローカルはVite、本番はNginxがSPAを配信します。DBとRedisには永続ボリュームを使用し、フィード取得・翻訳はキューで非同期処理します。
 
 ソース・記事を共有データとして保存し、購読や記事の状態・メモはユーザーごとに管理します。
+
+### ◇ ER図
+
+主要5テーブルの関係と代表的なカラムを示しています（共通日時などは省略）。
+
+```mermaid
+erDiagram
+    users |o--o{ sources : "作成（任意）"
+    sources ||--o{ articles : "配信"
+    users ||--o{ user_sources : "購読"
+    sources ||--o{ user_sources : "購読対象"
+    users ||--o{ user_articles : "状態・メモを管理"
+    articles ||--o{ user_articles : "管理対象"
+
+    users {
+        bigint id PK
+        string name
+        string email UK
+    }
+    sources {
+        bigint id PK
+        bigint created_by_user_id FK "nullable"
+        string name
+        string feed_url UK
+    }
+    articles {
+        bigint id PK
+        bigint source_id FK
+        string url UK
+        text title
+        text translated_title "nullable"
+    }
+    user_sources {
+        bigint id PK
+        bigint user_id FK
+        bigint source_id FK
+    }
+    user_articles {
+        bigint id PK
+        bigint user_id FK
+        bigint article_id FK
+        boolean is_read
+        boolean is_favorite
+        boolean is_read_later
+        text memo "nullable"
+    }
+```
+
+`user_sources`はユーザーと配信元、`user_articles`はユーザーと記事の組み合わせをそれぞれ一意にし、購読・状態の重複登録を防ぎます。
 
 ## ◎ ローカル環境構築手順
 
@@ -136,7 +185,41 @@ docker compose exec frontend npm run lint
 docker compose exec frontend npm run build
 ```
 
-Oxlintと、TypeScriptの型チェックを含む本番ビルドを実行します。フロントエンドの自動テスト用スクリプト・E2Eテストは未整備です。
+Oxlintと、TypeScriptの型チェックを含む本番ビルドを実行します。
+
+### ◇ E2E（Playwright / Chromium）
+
+ローカルDockerの画面（`localhost:5173`）と実API（`localhost:8000`）を、ホストのNode.js 22でテストします。Alpineのfrontendコンテナ内では実行しません。初回は上記の環境構築・マイグレーションを済ませてください。
+
+```bash
+# リポジトリルート：外部RSS・DeepL処理を停止
+docker compose stop scheduler queue-worker
+docker compose up -d frontend
+cd frontend
+npm ci
+npx playwright install --with-deps chromium
+cp .env.e2e.example .env.e2e
+# .env.e2eに、上のDevelopmentSeederユーザーのメール・パスワードを設定
+npm run test:e2e
+```
+
+各テスト前に`DevelopmentSeeder`を自動実行し、対象ユーザーの購読・記事状態を初期化します（`APP_ENV=local`必須）。既存DB全体の削除は行いません。専用のローカル環境で実行し、同じユーザーでの手動操作や複数のE2Eプロセスの同時実行は避けてください。認証情報は環境変数でも指定でき、`.env.e2e`はGit管理対象外です。
+
+3ケースでログイン・一覧、キーワード検索、お気に入りの登録／解除と永続化、ログアウト後のアクセス制限を確認します。1 worker・リトライなしで実行し、外部へのブラウザリクエストは遮断します。scheduler / queue-workerが起動中なら開始前にエラーにします。
+
+失敗時のスクリーンショット・traceは`frontend/test-results/`、HTMLレポートは`frontend/playwright-report/`に出力します。`npx playwright show-report`で確認できます。認証情報を含み得るため成果物の公開は避けてください。終了後、通常のフィード取得を再開する場合のみ、ルートで`docker compose start scheduler queue-worker`を実行します。
+
+### ◇ GitHub Actions
+
+[CI workflow](.github/workflows/ci.yml)が`push` / `pull_request`時に次の3 jobを実行します。
+
+- **backend**：PHP 8.4でComposer依存関係をインストールし、`php artisan test`を実行。SQLiteのインメモリDBを使い、`PostgresTimezoneTest`はスキップします。
+- **frontend**：Node.js 22で`npm ci`、`npm run lint`、`npm run build`を実行。npmのダウンロードキャッシュを利用します。
+- **e2e**：runner内で既存ComposeのDB・Redis・MailHog・Laravel・Nginx・Viteを起動し、HTTP応答を確認後、Chromiumで上記3ケースを実行します。
+
+CIの環境設定は`.env.example`群のローカル用ダミー値を使用し、APP_KEYは実行時に生成します。E2E認証情報はDevelopmentSeederの既存の公開ローカル用定義から読み取り、各テスト前にメール認証済みユーザー・記事・状態を初期化します（`APP_ENV=local`）。GitHub Secretsの登録は不要です。scheduler / queue-workerは起動せず、外部RSS・DeepL・SESや本番環境には接続しません。
+
+E2E失敗時はPlaywrightレポート・スクリーンショット・traceをartifactとして7日間保存します。認証セッションを含み得るため、共有範囲に注意してください。初回実行では3 jobの成功、Dockerの起動とマイグレーション、E2Eの3件成功を確認してください。ローカル実行方法は上記のE2E手順を参照してください。
 
 ## ◎ ディレクトリ構成
 
@@ -191,7 +274,19 @@ tech-news-aggregator/
 
 以下は未実装・今後の検討事項です。
 
-- フロントエンドの自動テスト・E2EテストとCIの整備
-- 翻訳失敗・利用量の管理、未翻訳記事の再処理
-- デプロイ・運用手順の整備
-- Pro構想：Free / Proのプランモデル、決済連携、限定機能（購読上限・取得頻度など）の検討、プラン変更・解約・請求履歴
+### ◇ 品質保証
+
+* フロントエンドの自動テストの拡充
+
+### ◇ 翻訳機能
+
+* 翻訳失敗・利用量の管理
+* 未翻訳記事の再処理
+
+### ◇ 運用
+
+* 本番環境のデプロイ・障害対応手順のドキュメント化
+
+### ◇ 将来構想
+
+* Pro構想：Free / Proプラン、決済連携、購読上限・取得頻度などの限定機能
