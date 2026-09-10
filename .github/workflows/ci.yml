@@ -1,0 +1,128 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend tests (SQLite)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, dom, xml, xmlwriter, pdo_sqlite, sqlite3, bcmath, zip
+          tools: composer:v2
+          coverage: none
+      - run: cp .env.example .env
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - run: php artisan key:generate
+      # phpunit.xml selects SQLite :memory: and in-memory mail/cache/queues.
+      - run: php artisan test
+
+  frontend:
+    name: Frontend lint and build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: cp .env.example .env
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+
+  e2e:
+    name: Playwright (Chromium)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Prepare local environment
+        run: |
+          cp .env.example .env
+          cp backend/.env.example backend/.env
+          cp frontend/.env.example frontend/.env
+          # Read only the existing, public development fixture credentials.
+          # No repository secrets or production environment files are needed.
+          python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          seeder = Path('backend/database/seeders/DevelopmentSeeder.php').read_text()
+          email = re.search(r"\['email' => '([^']+)'\]", seeder).group(1)
+          password = re.search(r"Hash::make\('([^']+)'\)", seeder).group(1)
+          with open(os.environ['GITHUB_ENV'], 'a') as output:
+              output.write(f'E2E_EMAIL={email}\nE2E_PASSWORD={password}\n')
+          PY
+      - name: Install browser dependencies
+        working-directory: frontend
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Prepare Laravel and database
+        run: |
+          docker compose up -d --build --wait --wait-timeout 120 backend
+          docker compose exec -T backend composer install --no-interaction --prefer-dist --no-progress
+          docker compose exec -T backend php artisan key:generate
+          docker compose exec -T backend php artisan migrate --no-interaction
+          # The checkout and PHP-FPM run as different users on the runner.
+          docker compose exec -T backend chmod -R a+rwX storage bootstrap/cache
+          # The existing tests run DevelopmentSeeder before every test.
+          # Start only frontend and its dependencies, never scheduler/queue-worker.
+          docker compose up -d --build --wait --wait-timeout 120 frontend
+      - name: Wait for HTTP services
+        run: |
+          curl --fail --silent --show-error --retry 30 --retry-all-errors --retry-delay 1 --retry-max-time 90 --max-time 5 http://localhost:8000/up --output /dev/null
+          curl --fail --silent --show-error --retry 30 --retry-all-errors --retry-delay 1 --retry-max-time 90 --max-time 5 http://localhost:5173/login --output /dev/null
+      - name: Run E2E tests
+        working-directory: frontend
+        run: npm run test:e2e
+      - name: Show service logs on failure
+        if: failure()
+        run: docker compose logs --no-color --tail=100 backend nginx frontend db
+      - name: Upload Playwright failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: playwright-failure
+          path: |
+            frontend/playwright-report/
+            frontend/test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Stop CI services
+        if: always()
+        run: docker compose down --volumes --remove-orphans
