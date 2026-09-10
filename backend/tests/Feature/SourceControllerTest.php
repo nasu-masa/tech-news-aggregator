@@ -675,6 +675,208 @@ class SourceControllerTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
+    // Custom RSS subscription limit
+    // -------------------------------------------------------------------------
+
+    private function attachCustomSources(User $user, int $count): void
+    {
+        for ($i = 0; $i < $count; $i++) {
+            $source = Source::factory()->create([
+                'created_by_user_id' => $user->id,
+                'is_active' => true,
+            ]);
+            $user->sources()->attach($source->id);
+        }
+    }
+
+    public function test_カスタム_rs_s3件購読中は新規_ur_l登録を拒否する(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $this->actingAs($user);
+        $this->attachCustomSources($user, 3);
+
+        $mock = $this->createMock(FeedFetcher::class);
+        $mock->expects($this->never())->method('fetchXml');
+        $this->app->instance(FeedFetcher::class, $mock);
+
+        $this->postJson('/api/sources', ['feed_url' => 'https://example.com/feed.xml'])
+            ->assertUnprocessable()
+            ->assertJsonPath('errors.feed_url.0', 'カスタムRSSの購読は最大3件までです。購読を解除してから追加してください。');
+    }
+
+    public function test_カスタム_rs_s2件購読中は新規_ur_l登録できる(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $this->actingAs($user);
+        $this->attachCustomSources($user, 2);
+        $this->mockFetchXml($this->validFeedXml());
+
+        $this->postJson('/api/sources', ['feed_url' => 'https://example.com/feed.xml'])
+            ->assertCreated();
+    }
+
+    public function test_共通source購読は上限カウントに含まれず新規登録できる(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $this->actingAs($user);
+
+        for ($i = 0; $i < 3; $i++) {
+            $source = Source::factory()->create(['created_by_user_id' => null, 'is_default' => true, 'is_active' => true]);
+            $user->sources()->attach($source->id);
+        }
+
+        $this->mockFetchXml($this->validFeedXml());
+        $this->postJson('/api/sources', ['feed_url' => 'https://example.com/feed.xml'])
+            ->assertCreated();
+    }
+
+    public function test_購読済みカスタム_ur_lの再登録は上限を超えていても通る(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $this->actingAs($user);
+        $this->attachCustomSources($user, 2);
+
+        $existing = Source::factory()->create([
+            'feed_url' => 'https://existing.example.com/feed.xml',
+            'created_by_user_id' => $user->id,
+            'is_active' => true,
+        ]);
+        $user->sources()->attach($existing->id);
+
+        $mock = $this->createMock(FeedFetcher::class);
+        $mock->expects($this->never())->method('fetchXml');
+        $this->app->instance(FeedFetcher::class, $mock);
+
+        $this->postJson('/api/sources', ['feed_url' => 'https://existing.example.com/feed.xml'])
+            ->assertOk();
+    }
+
+    public function test_カスタム_rs_s3件購読中はカスタムsourceの追加を拒否する(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $this->actingAs($user);
+        $this->attachCustomSources($user, 3);
+
+        $source = Source::factory()->create([
+            'created_by_user_id' => $user->id,
+            'is_active' => true,
+        ]);
+
+        $this->postJson("/api/sources/{$source->id}/subscribe")
+            ->assertUnprocessable()
+            ->assertJsonPath('errors.feed_url.0', 'カスタムRSSの購読は最大3件までです。購読を解除してから追加してください。');
+
+        $this->assertDatabaseMissing('user_sources', [
+            'user_id' => $user->id,
+            'source_id' => $source->id,
+        ]);
+    }
+
+    public function test_カスタム_rs_s3件購読中でも共通sourceの追加は通る(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $this->actingAs($user);
+        $this->attachCustomSources($user, 3);
+
+        $source = Source::factory()->create(['created_by_user_id' => null, 'is_default' => true, 'is_active' => true]);
+
+        $this->postJson("/api/sources/{$source->id}/subscribe")
+            ->assertOk();
+    }
+
+    public function test_購読済みカスタムsourceの再購読は上限を超えていても通る(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $this->actingAs($user);
+        $this->attachCustomSources($user, 2);
+
+        $source = Source::factory()->create([
+            'created_by_user_id' => $user->id,
+            'is_active' => true,
+        ]);
+        $user->sources()->attach($source->id);
+
+        $this->postJson("/api/sources/{$source->id}/subscribe")
+            ->assertOk();
+    }
+
+    public function test_取得中に別の購読で上限に達したら新規登録をロールバックする(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $this->actingAs($user);
+        $this->attachCustomSources($user, 2);
+        $this->mock(FeedFetcher::class)->shouldReceive('fetchXml')->once()
+            ->andReturnUsing(function () use ($user) {
+                // Simulate another subscription completing during network I/O.
+                $this->attachCustomSources($user, 1);
+
+                return $this->validFeedXml();
+            });
+
+        $this->postJson('/api/sources', ['feed_url' => 'https://example.com/racing.xml'])
+            ->assertUnprocessable()->assertJsonValidationErrors('feed_url');
+        $this->assertSame(3, $user->sources()->count());
+        $this->assertDatabaseMissing('sources', ['feed_url' => 'https://example.com/racing.xml']);
+    }
+
+    public function test_取得中に同じ_ur_lが購読された場合は重複登録しない(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $this->actingAs($user);
+        $this->attachCustomSources($user, 2);
+        $url = 'https://example.com/racing.xml';
+        $this->mock(FeedFetcher::class)->shouldReceive('fetchXml')->once()
+            ->andReturnUsing(function () use ($user, $url) {
+                $source = Source::factory()->create(['feed_url' => $url, 'created_by_user_id' => $user->id]);
+                $user->sources()->attach($source->id);
+
+                return $this->validFeedXml();
+            });
+
+        $this->postJson('/api/sources', ['feed_url' => $url])->assertOk();
+        $this->assertSame(3, $user->sources()->count());
+        $this->assertSame(1, Source::where('feed_url', $url)->count());
+    }
+
+    public function test_上限時は未購読の既存_ur_l登録も拒否し解除後は購読できる(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $this->actingAs($user);
+        $this->attachCustomSources($user, 3);
+        $source = Source::factory()->create(['created_by_user_id' => $user->id, 'feed_url' => 'https://example.com/existing.xml']);
+        $this->mock(FeedFetcher::class)->shouldNotReceive('fetchXml');
+
+        $this->postJson('/api/sources', ['feed_url' => $source->feed_url])
+            ->assertUnprocessable()->assertJsonValidationErrors('feed_url');
+        $this->assertDatabaseMissing('user_sources', ['user_id' => $user->id, 'source_id' => $source->id]);
+        $this->deleteJson('/api/sources/'.$user->sources()->first()->id.'/subscribe')->assertOk();
+        $this->postJson('/api/sources', ['feed_url' => $source->feed_url])->assertOk();
+        $this->assertSame(3, $user->sources()->count());
+    }
+
+    public function test_非アクティブ購読は一覧にも上限にも含めず全登録経路で枠を利用できる(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $this->actingAs($user);
+        $inactive = Source::factory()->create(['is_active' => false, 'created_by_user_id' => $user->id]);
+        $user->sources()->attach($inactive->id);
+        $this->mockFetchXml($this->validFeedXml());
+        $this->postJson('/api/sources', ['feed_url' => 'https://example.com/new.xml'])->assertCreated();
+
+        $existing = Source::factory()->create(['created_by_user_id' => $user->id, 'feed_url' => 'https://example.com/existing.xml']);
+        $this->postJson('/api/sources', ['feed_url' => $existing->feed_url])->assertOk();
+        $resubscribed = Source::factory()->create(['created_by_user_id' => $user->id]);
+        $this->postJson('/api/sources/'.$resubscribed->id.'/subscribe')->assertOk();
+        $this->getJson('/api/sources')->assertOk()->assertJsonCount(3)
+            ->assertJsonMissing(['id' => $inactive->id]);
+        $this->assertSame(4, $user->sources()->count());
+        $this->assertSame(3, $user->sources()->where('is_active', true)->count());
+
+        $extra = Source::factory()->create(['created_by_user_id' => $user->id]);
+        $this->postJson('/api/sources/'.$extra->id.'/subscribe')->assertUnprocessable();
+    }
+
+    // -------------------------------------------------------------------------
     // DELETE /api/sources/{id}/subscribe
     // -------------------------------------------------------------------------
 

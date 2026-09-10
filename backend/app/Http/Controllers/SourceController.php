@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreSourceRequest;
 use App\Jobs\ImportFeedJob;
 use App\Models\Source;
+use App\Models\User;
 use App\Services\FeedFetcher;
 use App\Services\FeedParser;
 use Illuminate\Http\Client\ConnectionException;
@@ -39,6 +40,36 @@ class SourceController extends Controller
             ->get();
     }
 
+    private const CUSTOM_LIMIT = 3;
+
+    private function countSubscribedCustomSources(User $user): int
+    {
+        return $user->sources()
+            ->where('sources.is_default', false)
+            ->where('sources.is_active', true)
+            ->count();
+    }
+
+    private function ensureCustomLimitNotExceeded(User $user): void
+    {
+        if ($this->countSubscribedCustomSources($user) >= self::CUSTOM_LIMIT) {
+            throw ValidationException::withMessages([
+                'feed_url' => ['カスタムRSSの購読は最大3件までです。購読を解除してから追加してください。'],
+            ]);
+        }
+    }
+
+    // Call only inside a transaction after locking the user's row.
+    private function attachWithinLimit(User $user, Source $source): void
+    {
+        if ($source->is_active && ! $source->is_default
+            && ! $user->sources()->whereKey($source->id)->exists()) {
+            $this->ensureCustomLimitNotExceeded($user);
+        }
+
+        $user->sources()->syncWithoutDetaching([$source->id]);
+    }
+
     public function store(StoreSourceRequest $request)
     {
         $feedUrl = $request->validated()['feed_url'];
@@ -46,11 +77,17 @@ class SourceController extends Controller
         $existing = Source::where('feed_url', $feedUrl)->first();
 
         if ($existing) {
-            $request->user()->sources()->syncWithoutDetaching([$existing->id]);
+            DB::transaction(function () use ($request, $existing) {
+                $user = User::whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
+                $this->attachWithinLimit($user, $existing);
+            });
             $existing->is_subscribed = true;
 
             return response()->json($existing);
         }
+
+        // Avoid fetching RSS when already full; recheck under lock before attaching.
+        $this->ensureCustomLimitNotExceeded($request->user());
 
         try {
             $xml = $this->feedFetcher->fetchXml($feedUrl);
@@ -80,24 +117,27 @@ class SourceController extends Controller
         $siteUrl = parse_url($feedUrl, PHP_URL_SCHEME).'://'.parse_url($feedUrl, PHP_URL_HOST);
 
         $source = DB::transaction(function () use ($feedUrl, $name, $siteUrl, $request) {
-            $source = Source::create([
+            $user = User::whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
+            // Another request may have registered this URL while RSS was fetched.
+            $source = Source::firstOrCreate(['feed_url' => $feedUrl], [
                 'name' => $name,
-                'feed_url' => $feedUrl,
                 'site_url' => $siteUrl,
-                'created_by_user_id' => $request->user()->id,
+                'created_by_user_id' => $user->id,
                 'is_active' => true,
             ]);
 
-            $request->user()->sources()->syncWithoutDetaching([$source->id]);
+            $this->attachWithinLimit($user, $source);
 
             return $source;
         });
 
-        ImportFeedJob::dispatch($source);
+        if ($source->wasRecentlyCreated) {
+            ImportFeedJob::dispatch($source);
+        }
 
         $source->is_subscribed = true;
 
-        return response()->json($source, 201);
+        return response()->json($source, $source->wasRecentlyCreated ? 201 : 200);
     }
 
     public function subscribe(Request $request, Source $source)
@@ -113,7 +153,10 @@ class SourceController extends Controller
             abort(404);
         }
 
-        $request->user()->sources()->syncWithoutDetaching([$source->id]);
+        DB::transaction(function () use ($request, $source) {
+            $user = User::whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
+            $this->attachWithinLimit($user, $source);
+        });
 
         return response()->json([
             'message' => 'ニュースソースを追加しました。',

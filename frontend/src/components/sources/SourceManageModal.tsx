@@ -4,6 +4,33 @@ import { getSources, registerSource, subscribeSource, unsubscribeSource } from "
 import { SOURCES_UPDATED_EVENT } from "../../lib/sourceEvents";
 import type { Source } from "../../types/source";
 
+const CUSTOM_LIMIT = 3;
+
+function CustomRssHint({
+    sources,
+    isLoading,
+    loadError,
+}: {
+    sources: Source[];
+    isLoading: boolean;
+    loadError: string;
+}) {
+    const customCount = sources.filter((s) => !s.is_default && s.is_subscribed).length;
+    const atLimit = customCount >= CUSTOM_LIMIT;
+
+    return (
+        <div className="mt-2 text-xs text-stone-500">
+            <p>カスタムRSSは最大{CUSTOM_LIMIT}件まで登録できます（共通ソースは含まれません）。</p>
+            {!isLoading && !loadError && (
+                <p className={`mt-0.5 ${atLimit ? "font-medium text-red-600" : ""}`}>
+                    現在 {customCount} / {CUSTOM_LIMIT} 件
+                    {atLimit && "（上限に達しています）"}
+                </p>
+            )}
+        </div>
+    );
+}
+
 type Props = {
     isOpen: boolean;
     onClose: () => void;
@@ -106,8 +133,13 @@ function SourceManageModal({ isOpen, onClose }: Props) {
                 ),
             );
             window.dispatchEvent(new CustomEvent(SOURCES_UPDATED_EVENT));
-        } catch {
-            setActionError("操作に失敗しました。もう一度お試しください。");
+        } catch (err) {
+            if (axios.isAxiosError(err) && err.response?.status === 422) {
+                const data = err.response.data as { errors?: { feed_url?: string[] }; message?: string };
+                setActionError(data.errors?.feed_url?.[0] ?? data.message ?? "操作に失敗しました。もう一度お試しください。");
+            } else {
+                setActionError("操作に失敗しました。もう一度お試しください。");
+            }
         } finally {
             setPendingIds((prev) => {
                 const next = new Set(prev);
@@ -179,6 +211,7 @@ function SourceManageModal({ isOpen, onClose }: Props) {
                             {isRegistering ? "登録中..." : "追加"}
                         </button>
                     </div>
+                    <CustomRssHint sources={sources} isLoading={isLoading} loadError={loadError} />
                     {registerSuccess && (
                         <p
                             className="mt-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-700"
