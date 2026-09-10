@@ -22,6 +22,10 @@ class ImportFeedJob implements ShouldBeUnique, ShouldQueue
 
     public function handle(FeedImporter $feedImporter): void
     {
+        if (! $this->source->is_default && ! $this->source->users()->exists()) {
+            return;
+        }
+
         $feedImporter->import($this->source);
     }
 

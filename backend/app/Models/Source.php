@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'feed_url',
     'site_url',
     'created_by_user_id',
+    'is_default',
     'is_active',
     'last_success_at',
     'last_error_at',

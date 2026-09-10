@@ -14,7 +14,11 @@ class ImportFeedsCommand extends Command
 {
     public function handle()
     {
-        $sources = Source::where('is_active', true)->get();
+        $sources = Source::where('is_active', true)
+            ->where(function ($query) {
+                $query->where('is_default', true)->orWhereHas('users');
+            })
+            ->get();
 
         foreach ($sources as $source) {
             ImportFeedJob::dispatch($source);

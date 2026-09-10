@@ -17,6 +17,7 @@ class ImportFeedJobTest extends TestCase
     {
         $source = new Source([
             'feed_url' => 'https://example.com/feed.xml',
+            'is_default' => true,
         ]);
 
         $feedImporter = Mockery::mock(FeedImporter::class);

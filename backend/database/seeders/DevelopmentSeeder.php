@@ -62,6 +62,7 @@ class DevelopmentSeeder extends Seeder
                     [
                         'name' => $definition['name'],
                         'site_url' => $definition['site_url'],
+                        'is_default' => true,
                         'is_active' => true,
                     ],
                 );

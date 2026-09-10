@@ -83,6 +83,7 @@ class SourceSeeder extends Seeder
                 [
                     'name' => $source['name'],
                     'site_url' => $source['site_url'],
+                    'is_default' => true,
                     'is_active' => true,
                 ],
             );
