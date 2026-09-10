@@ -56,7 +56,7 @@ function DesktopSidebar() {
 
     const query = nextSearchParams.toString();
 
-    return query ? `/?${query}` : "/";
+    return query ? `/articles?${query}` : "/articles";
   };
 
   useEffect(() => {

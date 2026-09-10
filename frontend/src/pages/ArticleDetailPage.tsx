@@ -32,7 +32,7 @@ function ArticleDetailPage() {
       ? location.state.fromSearch
       : "";
 
-  const articleListUrl = fromSearch ? `/?${fromSearch}` : "/";
+  const articleListUrl = fromSearch ? `/articles?${fromSearch}` : "/articles";
 
   useEffect(() => {
     let ignore = false;

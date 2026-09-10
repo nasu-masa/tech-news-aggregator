@@ -30,7 +30,7 @@ function LoginPage() {
       await loginUser(data);
       const user = await refreshUser();
 
-      navigate(user?.email_verified_at ? "/" : "/verify-email", {
+      navigate(user?.email_verified_at ? "/articles" : "/verify-email", {
         replace: true,
       });
     } catch (error) {

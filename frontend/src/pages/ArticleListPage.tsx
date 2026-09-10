@@ -214,7 +214,7 @@ function ArticleListPage() {
 
             {hasFilters ? (
               <Link
-                to="/"
+                to="/articles"
                 className="mt-5 inline-block rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50 hover:text-stone-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700/40"
               >
                 すべての記事を表示

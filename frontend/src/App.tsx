@@ -1,3 +1,4 @@
+import HomePage from "./pages/HomePage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import VerifiedRoute from "./components/auth/VerifiedRoute";
 import AppLayout from "./components/layout/AppLayout";
@@ -19,6 +20,7 @@ function App() {
   return (
     <Routes>
       <Route element={<AppLayout />}>
+        <Route path="/" element={<HomePage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -51,7 +53,7 @@ function App() {
         />
         <Route element={<ArticleLayout />}>
           <Route
-            path="/"
+            path="/articles"
             element={
               <ProtectedRoute>
                 <VerifiedRoute>

@@ -37,7 +37,7 @@ function VerifyEmailPage() {
   if (user.email_verified_at !== null) {
     return (
       <Navigate
-        to="/"
+        to="/articles"
         replace
         state={searchParams.get("verified") === "1" ? { emailVerified: true } : null}
       />
