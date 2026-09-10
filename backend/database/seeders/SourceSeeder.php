@@ -60,6 +60,21 @@ class SourceSeeder extends Seeder
                 'feed_url' => 'https://tailwindcss.com/feeds/feed.xml',
                 'site_url' => 'https://tailwindcss.com/blog',
             ],
+            [
+                'name' => 'gihyo.jp',
+                'feed_url' => 'https://gihyo.jp/feed/rss2',
+                'site_url' => 'https://gihyo.jp',
+            ],
+            [
+                'name' => 'DevelopersIO',
+                'feed_url' => 'https://dev.classmethod.jp/feed/',
+                'site_url' => 'https://dev.classmethod.jp',
+            ],
+            [
+                'name' => 'CodeZine',
+                'feed_url' => 'https://codezine.jp/rss/new/20/index.xml',
+                'site_url' => 'https://codezine.jp',
+            ],
         ];
 
         foreach ($sources as $source) {

@@ -155,7 +155,7 @@ docker compose exec backend php artisan feeds:import
 
 | Seeder | 作成内容 |
 |---|---|
-| `SourceSeeder` | 共通のニュースソース10件を登録・更新。記事・ユーザーは作成しない |
+| `SourceSeeder` | 共通のニュースソース13件を登録・更新。記事・ユーザーは作成しない |
 | `DatabaseSeeder`（`php artisan db:seed`）| 共通ソースと認証済みユーザー`test@example.com`を作成。同一ユーザーがいる状態では再実行不可 |
 | `DevelopmentSeeder` | `APP_ENV=local`専用。認証済みユーザー`dev@example.test`と、画面確認用の記事・購読・状態・メモを作成 |
 
