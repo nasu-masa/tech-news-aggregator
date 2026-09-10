@@ -1,3 +1,5 @@
+[![CI](https://github.com/nasu-masa/tech-news-aggregator/actions/workflows/ci.yml/badge.svg)](https://github.com/nasu-masa/tech-news-aggregator/actions/workflows/ci.yml)
+
 ## ◎ アプリ概要・制作目的
 
 **tech-news-aggregator（テクっと）** は、RSS / Atomで配信されるテックニュースを収集・整理するWebアプリケーションです。複数サイトの情報を一か所で確認し、購読・既読管理・お気に入り・メモで、日々の情報収集と読み返しを支援します。
