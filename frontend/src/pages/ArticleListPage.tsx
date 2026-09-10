@@ -266,6 +266,12 @@ function ArticleListPage() {
                     </p>
                   )}
 
+                  {(article.translated_summary ?? article.summary) && (
+                    <p className="mt-3 line-clamp-3 whitespace-pre-line text-sm leading-relaxed text-stone-600">
+                      {article.translated_summary ?? article.summary}
+                    </p>
+                  )}
+
                   {(status?.is_read || status?.is_favorite || status?.is_read_later) && (
                     <div
                       className="mt-5 flex flex-wrap gap-2 border-t border-stone-100 pt-4"

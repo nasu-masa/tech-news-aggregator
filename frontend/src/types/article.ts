@@ -17,6 +17,7 @@ export type Article = {
     title: string;
     translated_title: string | null;
     summary: string | null;
+    translated_summary: string | null;
     url: string;
     published_at: string | null;
     source: Source;

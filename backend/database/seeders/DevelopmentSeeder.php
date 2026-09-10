@@ -93,6 +93,9 @@ class DevelopmentSeeder extends Seeder
                         'summary' => $number % 2 === 0
                             ? "Fixed development summary for {$sourceKey} article {$numberLabel}."
                             : null,
+                        'translated_summary' => $number === 2
+                            ? "{$source->name}の記事概要の日本語訳です。"
+                            : null,
                         'published_at' => $sourceKey === 'infrastructure' && $number === 6
                             ? null
                             : $publishedAt->subHours($articleSequence - 1),

@@ -19,17 +19,34 @@ class TranslateArticleTitleJob implements ShouldQueue
 
     public function handle(DeepLTranslator $translator): void
     {
-        if ($this->article->translated_title !== null) {
-            return;
+        // Keep this class name so already queued title jobs remain compatible.
+        if ($this->article->exists) {
+            $this->article->refresh();
         }
 
-        if ($this->isJapanese($this->article->title)) {
-            return;
+        $failure = null;
+
+        foreach (['title', 'summary'] as $field) {
+            $text = $this->article->{$field};
+            $translatedField = 'translated_'.$field;
+
+            if ($this->article->{$translatedField} !== null
+                || $text === null || trim($text) === '' || $this->isJapanese($text)) {
+                continue;
+            }
+
+            try {
+                $translated = $translator->translate($text);
+                $this->article->update([$translatedField => $translated]);
+            } catch (\Throwable $exception) {
+                // Save the other field even on failure; retries skip saved translations.
+                $failure ??= $exception;
+            }
         }
 
-        $translated = $translator->translate($this->article->title);
-
-        $this->article->update(['translated_title' => $translated]);
+        if ($failure !== null) {
+            throw $failure;
+        }
     }
 
     private function isJapanese(string $text): bool

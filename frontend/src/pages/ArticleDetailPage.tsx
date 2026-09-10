@@ -235,7 +235,7 @@ function ArticleDetailPage() {
               概要
             </h2>
             <p className="whitespace-pre-wrap break-words text-base leading-7 text-stone-700">
-              {article.summary ?? "この記事の概要はありません。"}
+              {article.translated_summary ?? article.summary ?? "この記事の概要はありません。"}
             </p>
 
             <div className="mt-8">

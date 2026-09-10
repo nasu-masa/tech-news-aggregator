@@ -58,3 +58,22 @@ test('お気に入りを登録・解除でき、再読み込み後も保存さ�
   await page.reload();
   await expect(add).toHaveAttribute('aria-pressed', 'false');
 });
+
+test('一覧と詳細で翻訳概要を優先し、未翻訳なら原文を表示する', async ({ page }) => {
+  for (const number of ['02', '04']) {
+    const articleTitle = `Development Backend News Article ${number}`;
+    const original = `Fixed development summary for backend article ${number}.`;
+    const summary = number === '02' ? 'Development Backend Newsの記事概要の日本語訳です。' : original;
+    await page.goto('/articles');
+    await page.getByRole('searchbox', { name: '記事をキーワードで検索' }).fill(articleTitle);
+    await page.getByRole('button', { name: '検索', exact: true }).click();
+    const card = page.getByRole('article');
+    await expect(card).toHaveCount(1);
+    await expect(card.getByText(summary, { exact: true })).toBeVisible();
+    if (number === '02') await expect(card.getByText(original, { exact: true })).toHaveCount(0);
+    await card.getByRole('link', { name: articleTitle, exact: true }).click();
+    const section = page.getByRole('region', { name: '概要', exact: true });
+    await expect(section.getByText(summary, { exact: true })).toBeVisible();
+    if (number === '02') await expect(section.getByText(original, { exact: true })).toHaveCount(0);
+  }
+});

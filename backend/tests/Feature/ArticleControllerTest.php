@@ -441,6 +441,46 @@ class ArticleControllerTest extends TestCase
             ->assertJsonPath('data.0.id', $article->id);
     }
 
+    public function test_検索キーワードの255文字制限を維持する(): void
+    {
+        $this->actingAs(User::factory()->create(['email_verified_at' => now()]));
+        $this->getJson('/api/articles?'.http_build_query(['keyword' => str_repeat('あ', 255)]))
+            ->assertOk();
+        $this->getJson('/api/articles?'.http_build_query(['keyword' => str_repeat('あ', 256)]))
+            ->assertUnprocessable()->assertJsonValidationErrors('keyword');
+    }
+
+    public function test_翻訳概要で検索でき一覧と詳細に原文と訳文を返す(): void
+    {
+        $this->actingAs(User::factory()->create(['email_verified_at' => now()]));
+        $article = Article::factory()->create([
+            'title' => 'English title',
+            'summary' => 'English summary',
+            'translated_summary' => '検索対象の日本語概要',
+        ]);
+        Article::factory()->create(['translated_summary' => null]);
+
+        $this->getJson('/api/articles?'.http_build_query(['keyword' => '検索対象']))
+            ->assertOk()->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $article->id)
+            ->assertJsonPath('data.0.summary', 'English summary')
+            ->assertJsonPath('data.0.translated_summary', '検索対象の日本語概要');
+        $this->getJson('/api/articles/'.$article->id)->assertOk()
+            ->assertJsonPath('summary', 'English summary')
+            ->assertJsonPath('translated_summary', '検索対象の日本語概要');
+    }
+
+    public function test_翻訳概要がnullの記事も一覧と詳細に返す(): void
+    {
+        $this->actingAs(User::factory()->create(['email_verified_at' => now()]));
+        $article = Article::factory()->create(['summary' => null]);
+        $this->getJson('/api/articles')->assertOk()
+            ->assertJsonPath('data.0.id', $article->id)
+            ->assertJsonPath('data.0.translated_summary', null);
+        $this->getJson('/api/articles/'.$article->id)->assertOk()
+            ->assertJsonPath('summary', null)->assertJsonPath('translated_summary', null);
+    }
+
     public function test_概要のキーワードで記事を検索できる(): void
     {
         $user = User::factory()->create([

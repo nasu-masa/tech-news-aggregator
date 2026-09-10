@@ -34,6 +34,27 @@ class TranslateArticleTitleJobTest extends TestCase
         (new TranslateArticleTitleJob($article))->handle($translator);
     }
 
+    public function test_日本語タイトルは翻訳せず英語概要のみ翻訳する(): void
+    {
+        /** @var Article&MockInterface $article */
+        $article = Mockery::mock(Article::class)->makePartial();
+        $article->title = '最新AIの動向';
+        $article->translated_title = null;
+        $article->summary = 'The latest trends in AI';
+        $article->translated_summary = null;
+        $article->shouldReceive('update')
+            ->once()
+            ->with(['translated_summary' => 'AIの最新動向']);
+
+        $translator = Mockery::mock(DeepLTranslator::class);
+        $translator->shouldReceive('translate')
+            ->once()
+            ->with('The latest trends in AI')
+            ->andReturn('AIの最新動向');
+
+        (new TranslateArticleTitleJob($article))->handle($translator);
+    }
+
     public function test_中国語タイトルは_deep_lを呼ぶ(): void
     {
         /** @var Article&MockInterface $article */

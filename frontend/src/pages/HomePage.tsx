@@ -3,7 +3,7 @@ import { useAuth } from "../hooks/useAuth";
 
 const features = [
   { title: "ニュース自動収集", description: "RSS / Atomから複数の配信元の記事をまとめて確認。" },
-  { title: "日本語タイトル翻訳", description: "DeepLで新規記事のタイトルを日本語に翻訳。" },
+  { title: "タイトル・概要の日本語翻訳", description: "DeepLで新規記事のタイトルと概要を日本語に翻訳。" },
   { title: "キーワード検索", description: "原文・翻訳タイトルや概要から、気になる記事を検索。" },
   { title: "お気に入り・あとで読む", description: "残したい記事や時間のあるときに読みたい記事を保存。" },
   { title: "既読管理・メモ", description: "読んだ記事を整理し、気づきや学びをメモ。" },
