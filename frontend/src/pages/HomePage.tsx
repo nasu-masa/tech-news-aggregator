@@ -19,9 +19,9 @@ function HomePage() {
   return (
     <main className="flex-1">
       <section className="border-b border-emerald-100 bg-emerald-50/60 px-4 py-14 sm:px-6 sm:py-20" aria-labelledby="home-heading">
-        <div className="mx-auto max-w-3xl text-center">
+        <div className="mx-auto max-w-5xl text-center">
           <p className="mb-4 text-lg font-bold tracking-wide text-emerald-800">テクっと</p>
-          <h1 id="home-heading" className="text-3xl font-bold leading-relaxed tracking-tight text-stone-900 sm:text-5xl sm:leading-snug">
+          <h1 id="home-heading" className="text-3xl font-bold leading-relaxed tracking-tight text-balance text-stone-900 sm:text-5xl sm:leading-snug">
             気になるテックニュースを、<wbr />まとめてチェック。
           </h1>
           <p className="mx-auto mt-6 max-w-xl text-base leading-8 text-stone-600">
