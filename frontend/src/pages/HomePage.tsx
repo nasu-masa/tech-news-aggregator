@@ -22,7 +22,7 @@ function HomePage() {
         <div className="mx-auto max-w-3xl text-center">
           <p className="mb-4 text-lg font-bold tracking-wide text-emerald-800">テクっと</p>
           <h1 id="home-heading" className="text-3xl font-bold leading-relaxed tracking-tight text-stone-900 sm:text-5xl sm:leading-snug">
-            テックニュースを、<wbr />ひとつの場所で。
+            気になるテックニュースを、<wbr />まとめてチェック。
           </h1>
           <p className="mx-auto mt-6 max-w-xl text-base leading-8 text-stone-600">
             RSS / Atomで配信される複数のテックニュースをまとめて確認。
