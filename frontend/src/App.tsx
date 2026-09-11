@@ -7,6 +7,7 @@ import ArticleDetailPage from "./pages/ArticleDetailPage.tsx";
 import ArticleListPage from "./pages/ArticleListPage";
 import ContactPage from "./pages/ContactPage";
 import PrivacyPage from "./pages/PrivacyPage";
+import TermsPage from "./pages/TermsPage";
 import DeleteAccountPage from "./pages/DeleteAccountPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import LoginPage from "./pages/LoginPage";
@@ -27,6 +28,7 @@ function App() {
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
         <Route
           path="/verify-email"
           element={
