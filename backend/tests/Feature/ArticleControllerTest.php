@@ -37,6 +37,8 @@ class ArticleControllerTest extends TestCase
             'published_at' => now(),
         ]);
 
+        $user->sources()->attach(Source::query()->pluck('id'));
+
         $response = $this->getJson('/api/articles');
 
         $response
@@ -44,6 +46,81 @@ class ArticleControllerTest extends TestCase
             ->assertJsonFragment([
                 'title' => 'テスト記事',
             ]);
+    }
+
+    #[DataProvider('subscriptionFilterProvider')]
+    public function test_各フィルターでも未購読記事は一覧に含まれない(bool $isDefault, array $filters): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $otherUser = User::factory()->create();
+        $subscribedSource = Source::factory()->create(['is_default' => $isDefault]);
+        $unsubscribedSource = Source::factory()->create(['is_default' => $isDefault]);
+        $user->sources()->attach($subscribedSource->id);
+        $otherUser->sources()->attach($unsubscribedSource->id);
+
+        $subscribedArticle = Article::factory()->create([
+            'source_id' => $subscribedSource->id,
+            'title' => '検索対象',
+            'summary' => '検索対象',
+            'translated_title' => '検索対象',
+            'translated_summary' => '検索対象',
+        ]);
+        $unsubscribedArticle = Article::factory()->create([
+            'source_id' => $unsubscribedSource->id,
+            'title' => '検索対象',
+            'summary' => '検索対象',
+            'translated_title' => '検索対象',
+            'translated_summary' => '検索対象',
+        ]);
+
+        foreach ([$subscribedArticle, $unsubscribedArticle] as $article) {
+            UserArticle::create([
+                'user_id' => $user->id,
+                'article_id' => $article->id,
+                'is_favorite' => true,
+                'is_read_later' => true,
+                'is_read' => ($filters['status'] ?? null) !== 'unread',
+            ]);
+        }
+
+        $this->actingAs($user)
+            ->getJson('/api/articles?'.http_build_query($filters))
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('total', 1)
+            ->assertJsonPath('data.0.id', $subscribedArticle->id)
+            ->assertJsonPath('data.0.source.is_subscribed', true);
+
+        $this->getJson('/api/articles?'.http_build_query([
+            ...$filters,
+            'source_id' => $unsubscribedSource->id,
+        ]))->assertOk()->assertJsonCount(0, 'data')->assertJsonPath('total', 0);
+
+        $user->sources()->detach($subscribedSource->id);
+        $this->getJson('/api/articles?'.http_build_query($filters))
+            ->assertOk()->assertJsonCount(0, 'data')->assertJsonPath('total', 0);
+    }
+
+    public static function subscriptionFilterProvider(): array
+    {
+        $cases = [];
+        foreach (['共通' => true, 'カスタム' => false] as $type => $isDefault) {
+            foreach ([
+                '通常' => [],
+                '購読指定あり' => ['subscribed_only' => 'true'],
+                '購読指定false' => ['subscribed_only' => 'false'],
+                '検索' => ['keyword' => '検索対象'],
+                '既読' => ['status' => 'read'],
+                '未読' => ['status' => 'unread'],
+                'お気に入り' => ['status' => 'favorite'],
+                'あとで読む' => ['status' => 'read_later'],
+                '検索と保存状態' => ['keyword' => '検索対象', 'status' => 'favorite'],
+            ] as $filter => $filters) {
+                $cases[$type.$filter] = [$isDefault, $filters];
+            }
+        }
+
+        return $cases;
     }
 
     public function test_未認証ユーザーは記事一覧を取得できない(): void
@@ -97,6 +174,8 @@ class ArticleControllerTest extends TestCase
             'published_at' => '2026-08-10 00:00:00',
         ]);
 
+        $user->sources()->attach(Source::query()->pluck('id'));
+
         $response = $this->getJson('/api/articles');
 
         $response
@@ -122,6 +201,8 @@ class ArticleControllerTest extends TestCase
             'title' => '公開日時なし',
             'published_at' => null,
         ]);
+
+        $user->sources()->attach(Source::query()->pluck('id'));
 
         $response = $this->getJson('/api/articles');
 
@@ -154,6 +235,8 @@ class ArticleControllerTest extends TestCase
             'published_at' => now(),
         ]);
 
+        $user->sources()->attach(Source::query()->pluck('id'));
+
         $response = $this->getJson('/api/articles');
 
         $response
@@ -172,6 +255,8 @@ class ArticleControllerTest extends TestCase
         Article::factory()
             ->count(21)
             ->create();
+
+        $user->sources()->attach(Source::query()->pluck('id'));
 
         $response = $this->getJson('/api/articles');
 
@@ -192,6 +277,8 @@ class ArticleControllerTest extends TestCase
         Article::factory()
             ->count(21)
             ->create();
+
+        $user->sources()->attach(Source::query()->pluck('id'));
 
         $response = $this->getJson('/api/articles?page=2');
 
@@ -403,6 +490,8 @@ class ArticleControllerTest extends TestCase
             'summary' => 'フロントエンドの記事です',
         ]);
 
+        $user->sources()->attach(Source::query()->pluck('id'));
+
         $response = $this->getJson('/api/articles?keyword=Laravel');
 
         $response
@@ -431,6 +520,8 @@ class ArticleControllerTest extends TestCase
             'summary' => 'How to improve query performance.',
         ]);
 
+        $user->sources()->attach(Source::query()->pluck('id'));
+
         $response = $this->getJson('/api/articles?'.http_build_query([
             'keyword' => '新機能',
         ]));
@@ -452,13 +543,16 @@ class ArticleControllerTest extends TestCase
 
     public function test_翻訳概要で検索でき一覧と詳細に原文と訳文を返す(): void
     {
-        $this->actingAs(User::factory()->create(['email_verified_at' => now()]));
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $this->actingAs($user);
         $article = Article::factory()->create([
             'title' => 'English title',
             'summary' => 'English summary',
             'translated_summary' => '検索対象の日本語概要',
         ]);
         Article::factory()->create(['translated_summary' => null]);
+
+        $user->sources()->attach(Source::query()->pluck('id'));
 
         $this->getJson('/api/articles?'.http_build_query(['keyword' => '検索対象']))
             ->assertOk()->assertJsonCount(1, 'data')
@@ -472,8 +566,11 @@ class ArticleControllerTest extends TestCase
 
     public function test_翻訳概要がnullの記事も一覧と詳細に返す(): void
     {
-        $this->actingAs(User::factory()->create(['email_verified_at' => now()]));
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $this->actingAs($user);
         $article = Article::factory()->create(['summary' => null]);
+        $user->sources()->attach(Source::query()->pluck('id'));
+
         $this->getJson('/api/articles')->assertOk()
             ->assertJsonPath('data.0.id', $article->id)
             ->assertJsonPath('data.0.translated_summary', null);
@@ -499,6 +596,8 @@ class ArticleControllerTest extends TestCase
             'summary' => 'フロントエンドの記事です',
         ]);
 
+        $user->sources()->attach(Source::query()->pluck('id'));
+
         $response = $this->getJson('/api/articles?keyword=Laravel');
 
         $response
@@ -520,6 +619,8 @@ class ArticleControllerTest extends TestCase
             'summary' => 'フロントエンドの記事です',
         ]);
 
+        $user->sources()->attach(Source::query()->pluck('id'));
+
         $response = $this->getJson('/api/articles?keyword=Laravel');
 
         $response
@@ -536,6 +637,8 @@ class ArticleControllerTest extends TestCase
         $this->actingAs($user);
 
         Article::factory()->count(2)->create();
+
+        $user->sources()->attach(Source::query()->pluck('id'));
 
         $response = $this->getJson('/api/articles');
 
@@ -564,6 +667,8 @@ class ArticleControllerTest extends TestCase
             'source_id' => $sourceB->id,
             'title' => 'SourceBの記事',
         ]);
+
+        $user->sources()->attach(Source::query()->pluck('id'));
 
         $response = $this->getJson("/api/articles?source_id={$sourceA->id}");
 
@@ -598,6 +703,8 @@ class ArticleControllerTest extends TestCase
             'source_id' => $sourceB->id,
             'title' => 'Laravelの記事',
         ]);
+
+        $user->sources()->attach([$sourceA->id, $sourceB->id]);
 
         $response = $this->getJson(
             "/api/articles?keyword=Laravel&source_id={$sourceA->id}"
@@ -690,6 +797,8 @@ class ArticleControllerTest extends TestCase
 
         Article::factory()->create();
 
+        $user->sources()->attach(Source::query()->pluck('id'));
+
         $response = $this->getJson('/api/articles?source_id=999999');
 
         $response
@@ -730,7 +839,7 @@ class ArticleControllerTest extends TestCase
             ->assertJsonPath('data.0.title', '購読中の記事');
     }
 
-    public function test_subscribed_onlyがfalseなら全記事を取得できる(): void
+    public function test_subscribed_onlyがfalseでも購読中の記事だけ取得できる(): void
     {
         $user = User::factory()->create([
             'email_verified_at' => now(),
@@ -759,7 +868,8 @@ class ArticleControllerTest extends TestCase
 
         $response
             ->assertOk()
-            ->assertJsonCount(2, 'data');
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.title', '購読中の記事');
     }
 
     public function test_記事一覧のsourceに購読状態が含まれる(): void
@@ -785,7 +895,7 @@ class ArticleControllerTest extends TestCase
             ->assertJsonPath('data.0.source.is_subscribed', true);
     }
 
-    public function test_未購読sourceなら購読状態はfalseになる(): void
+    public function test_購読ソースがなければ記事一覧は空になる(): void
     {
         $user = User::factory()->create([
             'email_verified_at' => now(),
@@ -803,7 +913,8 @@ class ArticleControllerTest extends TestCase
 
         $response
             ->assertOk()
-            ->assertJsonPath('data.0.source.is_subscribed', false);
+            ->assertJsonCount(0, 'data')
+            ->assertJsonPath('total', 0);
     }
 
     public function test_お気に入り状態を更新できる(): void
@@ -1112,6 +1223,8 @@ class ArticleControllerTest extends TestCase
             'is_read_later' => false,
         ]);
 
+        $user->sources()->attach(Source::query()->pluck('id'));
+
         $response = $this->getJson('/api/articles');
 
         $response
@@ -1142,6 +1255,8 @@ class ArticleControllerTest extends TestCase
             'is_read' => true,
             'is_read_later' => true,
         ]);
+
+        $user->sources()->attach(Source::query()->pluck('id'));
 
         $response = $this->getJson('/api/articles');
 
@@ -1395,6 +1510,8 @@ class ArticleControllerTest extends TestCase
             $field => true,
         ]);
 
+        $user->sources()->attach(Source::query()->pluck('id'));
+
         $this->actingAs($user)
             ->getJson("/api/articles?status={$status}")
             ->assertOk()
@@ -1433,6 +1550,8 @@ class ArticleControllerTest extends TestCase
             'is_read' => true,
         ]);
 
+        $user->sources()->attach(Source::query()->pluck('id'));
+
         $response = $this->actingAs($user)
             ->getJson('/api/articles?status=unread')
             ->assertOk()
@@ -1469,6 +1588,8 @@ class ArticleControllerTest extends TestCase
             'is_read' => true,
         ]);
 
+        $user->sources()->attach(Source::query()->pluck('id'));
+
         $response = $this->actingAs($user)
             ->getJson('/api/articles?status=read')
             ->assertOk()
@@ -1496,6 +1617,8 @@ class ArticleControllerTest extends TestCase
             'is_read' => true,
         ]);
 
+        $user->sources()->attach(Source::query()->pluck('id'));
+
         $this->actingAs($user)
             ->getJson('/api/articles?status=unread')
             ->assertOk()
@@ -1521,6 +1644,8 @@ class ArticleControllerTest extends TestCase
             'article_id' => $article->id,
             $field => true,
         ]);
+
+        $user->sources()->attach(Source::query()->pluck('id'));
 
         $this->actingAs($user)
             ->getJson("/api/articles?status={$status}")
@@ -1553,6 +1678,8 @@ class ArticleControllerTest extends TestCase
                 'is_favorite' => true,
             ]);
         }
+
+        $user->sources()->attach(Source::query()->pluck('id'));
 
         $this->actingAs($user)
             ->getJson(

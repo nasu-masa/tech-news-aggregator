@@ -45,11 +45,9 @@ class ArticleController extends Controller
             $query->where('source_id', $request->integer('source_id'));
         }
 
-        if ($request->boolean('subscribed_only')) {
-            $query->whereHas('source.users', function ($query) use ($request) {
-                $query->where('users.id', $request->user()->id);
-            });
-        }
+        $query->whereHas('source.users', function ($query) use ($request) {
+            $query->where('users.id', $request->user()->id);
+        });
 
         if ($request->filled('status')) {
             $status = $request->string('status')->toString();
